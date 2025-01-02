@@ -4,4 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+array2d = "0.3.2"
 binrw = "0.14.1"
+deltae = "0.3.2"
+fastlem = "0.1.4"
+image = "0.25.5"
+palette = "0.7.6"
+velcro = "0.5.4"

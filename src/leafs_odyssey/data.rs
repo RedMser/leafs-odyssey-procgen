@@ -14,8 +14,7 @@ pub struct LOWorld {
 
     #[bw(calc = 0)] // always
     unknown1: u32,
-    #[bw(calc = 50)]
-    size1: u32,
+    zone_stem_offset: u32,
     #[bw(calc = room_count + 1)]
     room_count_plus1: u32,
     pub zone: LOZone,
@@ -26,6 +25,7 @@ impl LOWorld {
     pub fn new(zone: LOZone, stems: Vec<LOStem>) -> Self {
         Self {
             room_count: zone.rooms.len() as u32,
+            zone_stem_offset: 0,
             zone,
             stems,
         }
@@ -45,7 +45,8 @@ impl LOWorld {
             })
             .collect::<VecDeque<u32>>();
 
-        self.zone.stem_offset = funky_list.pop_front().unwrap();
+        self.zone_stem_offset = funky_list.pop_front().unwrap();
+        self.zone.stem_offset = self.zone_stem_offset;
         self.zone.stem_length = funky_list.pop_front().unwrap();
 
         for room in &mut self.zone.rooms {
@@ -197,15 +198,14 @@ pub enum LOStemContent {
         guid_author1: u32,
         guid_author2: u32,
         world_revision: u32,
-        // These are zero for a small world, but others have values here.
-        unknown5: u32,
+        #[bw(calc = room_info.len() as u32)]
+        room_count_again: u32,
         unknown6: u32,
     },
     TileMapEdit {
         #[bw(calc = 0)] // always
         unknown1: u16,
-        #[bw(calc = 1)] // always
-        unknown2: u32,
+        id: u32,
         /// Name of the map / room.
         name: NullString,
         /// Should be 24.
@@ -390,6 +390,22 @@ pub enum LOTile {
     TrapdoorOverPacificFloor,
     #[bw(magic = 0x18u32)]
     GoalStar,
+    #[bw(magic = 0x2Du32)]
+    PressurePlate {
+        #[bw(calc = connections.len() as u32)]
+        connections_count: u32,
+        connections: Vec<LOConnection>,
+    },
+    #[bw(magic = 0x60u32)]
+    SacrificeAltar {
+        #[bw(calc = connections.len() as u32)]
+        connections_count: u32,
+        connections: Vec<LOConnection>,
+    },
+    #[bw(magic = 0x31u32)]
+    ToggleFloorInitiallyClosed,
+    #[bw(magic = 0x32u32)]
+    ToggleFloorInitiallyOpen,
 
     // Puzzle Elements on Layer 3
     #[bw(magic = 0x06u32)]
@@ -404,6 +420,10 @@ pub enum LOTile {
     MonsterGate,
     #[bw(magic = 0x16u32)]
     InvertedMonsterGate,
+    #[bw(magic = 0x2Eu32)]
+    ToggleDoorInitiallyClosed,
+    #[bw(magic = 0x2Fu32)]
+    ToggleDoorInitiallyOpen,
 
     // Puzzle Elements on Layer 4
     #[bw(magic = 0x0Eu32)]
@@ -422,6 +442,10 @@ pub enum LOTile {
     MultiPushBlock,
     #[bw(magic = 0x29u32)]
     MonsterBlock,
+    #[bw(magic = 0x03u32)]
+    StartPoint {
+        direction: LODirection,
+    },
 
     // Puzzle Elements on Layer 5
     #[bw(magic = 0x0Fu32)]
@@ -438,6 +462,22 @@ pub enum LOTile {
     StatueRubble,
     #[bw(magic = 0x2Cu32)]
     PoisonTrail,
+    #[bw(magic = 0x37u32)]
+    Sign {
+        text: NullString,
+    },
+    #[bw(magic = 0x62u32)]
+    Stack {
+        #[bw(calc = tiles.len() as u32)]
+        tiles_count: u32,
+        tiles: Vec<LOStackElement>,
+    },
+    #[bw(magic = 0x30u32)]
+    ToggleSwitch {
+        #[bw(calc = connections.len() as u32)]
+        connections_count: u32,
+        connections: Vec<LOConnection>,
+    },
 
     // Monsters (Layer 5)
     #[bw(magic = 0x15u32)]
@@ -457,16 +497,261 @@ pub enum LOTile {
         direction: LODirection,
     },
 
-    #[bw(magic = 0x03u32)]
-    StartPoint {
-        direction: LODirection,
-    },
-    #[bw(magic = 0x37u32)]
-    Sign {
-        text: NullString,
-    },
+    /// To try out stuff for yourself.
     Custom {
         id: u32,
+        custom_data: Vec<u8>,
+    },
+}
+
+#[binwrite]
+#[brw(little)]
+#[derive(Clone)]
+pub struct LOConnection {
+    pub x_position: u16,
+    pub y_position: u16,
+}
+
+#[binwrite]
+#[brw(little)]
+#[derive(Clone)]
+pub struct LOStackElement {
+    pub tile: LOStackTile,
+    pub direction: LOStackDirection,
+    #[bw(if(matches!(tile, LOStackTile::ToggleSwitch)), calc = connections.len() as u32)]
+    connections_count: u32,
+    #[bw(if(matches!(tile, LOStackTile::ToggleSwitch)))]
+    connections: Vec<LOConnection>,
+}
+
+#[binwrite]
+#[brw(little, repr = u16)]
+#[derive(Clone)]
+pub enum LOStackDirection {
+    Up = 0,
+    Right = 1,
+    Down = 2,
+    Left = 3,
+}
+
+#[binwrite]
+#[brw(little)]
+#[derive(Clone)]
+pub enum LOStackTile {
+    #[bw(magic = 0x00u16)]
+    None,
+
+    // Floor Tiles (Layer 1)
+    /// TODO: what happens for any of these?
+    #[bw(magic = 0x0Au16)]
+    Grass,
+    #[bw(magic = 0x0Bu16)]
+    Dirt,
+    #[bw(magic = 0x3Du16)]
+    DirtPath,
+    #[bw(magic = 0x3Bu16)]
+    Sand,
+    #[bw(magic = 0x3Cu16)]
+    Snow,
+    #[bw(magic = 0x38u16)]
+    OvergrownGrass,
+    #[bw(magic = 0x39u16)]
+    RedFlowers,
+    #[bw(magic = 0x3Au16)]
+    YellowFlowers,
+    #[bw(magic = 0x40u16)]
+    DeadGrass,
+    #[bw(magic = 0x3Fu16)]
+    SnowyGrass,
+    #[bw(magic = 0x3Eu16)]
+    Gravel,
+    #[bw(magic = 0x41u16)]
+    PineNeedles,
+    #[bw(magic = 0x13u16)]
+    WoodenFloor,
+    #[bw(magic = 0x44u16)]
+    StoneFloor,
+    #[bw(magic = 0x45u16)]
+    TileFloor,
+    #[bw(magic = 0x46u16)]
+    MarbleFloor,
+    #[bw(magic = 0x4Bu16)]
+    CobblestonePath,
+    #[bw(magic = 0x0Cu16)]
+    Water,
+    #[bw(magic = 0x17u16)]
+    Space,
+    #[bw(magic = 0x50u16)]
+    Sky,
+    #[bw(magic = 0x51u16)]
+    Cloud,
+    #[bw(magic = 0x52u16)]
+    Pit,
+
+    // Walls (Layer 1)
+    /// TODO: what happens for any of these?
+    #[bw(magic = 0x02u16)]
+    Wall,
+    #[bw(magic = 0x05u16)]
+    WallWithWindow,
+    #[bw(magic = 0x48u16)]
+    WoodenWall,
+    #[bw(magic = 0x57u16)]
+    WoodenWallWithWindow,
+    #[bw(magic = 0x49u16)]
+    BrickWall,
+    #[bw(magic = 0x59u16)]
+    BrickWallWithWindow,
+    #[bw(magic = 0x4Au16)]
+    StoneBrickWall,
+    #[bw(magic = 0x58u16)]
+    StoneBrickWallWithWindow,
+    #[bw(magic = 0x5Du16)]
+    Cliff,
+    #[bw(magic = 0x5Eu16)]
+    RoughStone,
+
+    // Obstacles (Layer 2)
+    /// TODO: what happens for any of these?
+    #[bw(magic = 0x14u16)]
+    Bush,
+    #[bw(magic = 0x4Cu16)]
+    PineTree,
+    #[bw(magic = 0x4Du16)]
+    AutumnTree,
+    #[bw(magic = 0x4Eu16)]
+    Tree,
+    #[bw(magic = 0x4Fu16)]
+    DeadTree,
+    #[bw(magic = 0x36u16)]
+    Pillar,
+    #[bw(magic = 0x42u16)]
+    WoodenFence,
+    #[bw(magic = 0x43u16)]
+    IronFence,
+    #[bw(magic = 0x47u16)]
+    Rock,
+    #[bw(magic = 0x5Fu16)]
+    Cattails,
+    #[bw(magic = 0x33u16)]
+    TallGrass,
+    #[bw(magic = 0x53u16)]
+    Curtain,
+    #[bw(magic = 0x61u16)]
+    Lamppost,
+
+    // Puzzle Elements on Layer 2
+    /// TODO: what happens
+    #[bw(magic = 0x11u16)]
+    SteppingStone,
+    /// TODO: what happens
+    #[bw(magic = 0x1Du16)]
+    Waypoint,
+    /// Not officially supported, can not be used due to stack blocking the tile I assume.
+    #[bw(magic = 0x19u16)]
+    LadderUp,
+    /// Not officially supported, can not be used due to stack blocking the tile I assume.
+    #[bw(magic = 0x1Au16)]
+    LadderDown,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x26u16)]
+    TrapdoorOverPit,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x27u16)]
+    TrapdoorOverWater,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x5Au16)]
+    TrapdoorOverHotCoals,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x5Bu16)]
+    TrapdoorOverIce,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x5Cu16)]
+    TrapdoorOverPacificFloor,
+    /// TODO: what happens
+    #[bw(magic = 0x18u16)]
+    GoalStar,
+
+    // Puzzle Elements on Layer 3
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x06u16)]
+    CrumblyWall,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x54u16)]
+    CrumblyBrickWall,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x55u16)]
+    CrumblyWoodenWall,
+    /// Not officially supported, but works as expected.
+    #[bw(magic = 0x56u16)]
+    CrumblyStoneBrickWall,
+
+    // Puzzle Elements on Layer 4
+    #[bw(magic = 0x0Eu16)]
+    PrimeKey,
+    #[bw(magic = 0x1Eu16)]
+    TerraKey,
+    #[bw(magic = 0x22u16)]
+    SkyKey,
+    #[bw(magic = 0x20u16)]
+    InfernalKey,
+    #[bw(magic = 0x24u16)]
+    StarKey,
+    #[bw(magic = 0x08u16)]
+    PushBlock,
+    #[bw(magic = 0x09u16)]
+    MultiPushBlock,
+    #[bw(magic = 0x29u16)]
+    MonsterBlock,
+    /// TODO: what happens
+    #[bw(magic = 0x03u16)]
+    StartPoint,
+
+    // Puzzle Elements on Layer 5
+    /// TODO: what happens
+    #[bw(magic = 0x0Fu16)]
+    PrimeDoor,
+    /// TODO: what happens
+    #[bw(magic = 0x1Fu16)]
+    TerraDoor,
+    /// TODO: what happens
+    #[bw(magic = 0x23u16)]
+    SkyDoor,
+    /// TODO: what happens
+    #[bw(magic = 0x21u16)]
+    InfernalDoor,
+    /// TODO: what happens
+    #[bw(magic = 0x25u16)]
+    StarDoor,
+    #[bw(magic = 0x28u16)]
+    StatueRubble,
+    /// TODO: what happens
+    #[bw(magic = 0x2Cu16)]
+    PoisonTrail,
+    /// TODO: what happens
+    #[bw(magic = 0x37u16)]
+    Sign,
+    /// TODO: what happens
+    #[bw(magic = 0x62u16)]
+    Stack,
+    #[bw(magic = 0x30u16)]
+    ToggleSwitch,
+
+    // Monsters (Layer 5)
+    #[bw(magic = 0x15u16)]
+    AngryEye,
+    #[bw(magic = 0x1Cu16)]
+    BombBug,
+    #[bw(magic = 0x1Bu16)]
+    Statue,
+    #[bw(magic = 0x2Bu16)]
+    Slug,
+    #[bw(magic = 0x2Au16)]
+    FlyingSnake,
+
+    // To try out stuff for yourself.
+    Custom {
+        id: u16,
     },
 }
 
