@@ -260,6 +260,7 @@ pub enum LODirection {
 #[brw(little)]
 #[derive(Clone)]
 pub enum LOTile {
+    // Seems to be treated the same as magic 0x01, 0x04, 0x07, 0x63 (and possibly every invalid value above that?)
     #[bw(magic = 0x00u32)]
     None,
 
@@ -502,6 +503,196 @@ pub enum LOTile {
         id: u32,
         custom_data: Vec<u8>,
     },
+}
+
+impl LOTile {
+    pub fn same_type_as(&self, other: &Self) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
+    }
+
+    /// Floor Tiles (Layer 1)
+    pub fn is_floor(&self) -> bool {
+        matches!(
+            self,
+            Self::Grass
+                | Self::Dirt
+                | Self::DirtPath
+                | Self::Sand
+                | Self::Snow
+                | Self::OvergrownGrass
+                | Self::RedFlowers
+                | Self::YellowFlowers
+                | Self::DeadGrass
+                | Self::SnowyGrass
+                | Self::Gravel
+                | Self::PineNeedles
+                | Self::WoodenFloor
+                | Self::StoneFloor
+                | Self::TileFloor
+                | Self::MarbleFloor
+                | Self::CobblestonePath
+                | Self::Water
+                | Self::Space
+                | Self::Sky
+                | Self::Cloud
+                | Self::Pit
+        )
+    }
+
+    /// Walls (Layer 1)
+    pub fn is_wall(&self) -> bool {
+        matches!(
+            self,
+            Self::Wall
+                | Self::WallWithWindow
+                | Self::WoodenWall
+                | Self::WoodenWallWithWindow
+                | Self::BrickWall
+                | Self::BrickWallWithWindow
+                | Self::StoneBrickWall
+                | Self::StoneBrickWallWithWindow
+                | Self::Cliff
+                | Self::RoughStone
+        )
+    }
+
+    /// Obstacles (Layer 2)
+    pub fn is_obstacle(&self) -> bool {
+        matches!(
+            self,
+            Self::Bush
+                | Self::PineTree
+                | Self::AutumnTree
+                | Self::Tree
+                | Self::DeadTree
+                | Self::Pillar
+                | Self::WoodenFence
+                | Self::IronFence
+                | Self::Rock
+                | Self::Cattails
+                | Self::TallGrass
+                | Self::Curtain
+                | Self::Lamppost
+        )
+    }
+
+    /// Puzzle Elements on Layer 1
+    pub fn is_puzzle_floor(&self) -> bool {
+        matches!(
+            self,
+            Self::HotCoals
+                | Self::Ice
+                | Self::PacificFloor
+                | Self::BlockBarrier
+        )
+    }
+
+    /// Puzzle Elements on Layer 2
+    pub fn is_puzzle_obstacle(&self) -> bool {
+        self.is_trapdoor() || matches!(
+            self,
+            Self::SteppingStone
+                | Self::Waypoint
+                | Self::LadderUp
+                | Self::LadderDown
+                | Self::GoalStar
+                | Self::PressurePlate { .. }
+                | Self::SacrificeAltar { .. }
+                | Self::ToggleFloorInitiallyClosed
+                | Self::ToggleFloorInitiallyOpen
+        )
+    }
+
+    /// Layer 2
+    pub fn is_trapdoor(&self) -> bool {
+        matches!(
+            self,
+            Self::TrapdoorOverPit
+                | Self::TrapdoorOverWater
+                | Self::TrapdoorOverHotCoals
+                | Self::TrapdoorOverIce
+                | Self::TrapdoorOverPacificFloor
+        )
+    }
+
+    /// Multiple options, but first is the "canonical" one.
+    pub fn get_trapdoor_floors(&self) -> Vec<LOTile> {
+        match self {
+            LOTile::TrapdoorOverPit => vec![LOTile::Pit, LOTile::Space, LOTile::Sky, LOTile::Cloud],
+            LOTile::TrapdoorOverWater => vec![LOTile::Water],
+            LOTile::TrapdoorOverPacificFloor => vec![LOTile::PacificFloor],
+            LOTile::TrapdoorOverHotCoals => vec![LOTile::HotCoals],
+            LOTile::TrapdoorOverIce => vec![LOTile::Ice],
+            _ => panic!("Input was not a trapdoor tile."),
+        }
+    }
+
+    /// Puzzle Elements on Layer 3
+    pub fn is_puzzle_layer3(&self) -> bool {
+        self.is_crumbly_wall() || matches!(
+            self,
+            Self::MonsterGate
+                | Self::InvertedMonsterGate
+                | Self::ToggleDoorInitiallyClosed
+                | Self::ToggleDoorInitiallyOpen
+        )
+    }
+
+    // Layer 3.
+    pub fn is_crumbly_wall(&self) -> bool {
+        matches!(
+            self,
+            Self::CrumblyWall
+                | Self::CrumblyBrickWall
+                | Self::CrumblyWoodenWall
+                | Self::CrumblyStoneBrickWall
+        )
+    }
+
+    /// Puzzle Elements on Layer 4
+    pub fn is_puzzle_layer4(&self) -> bool {
+        matches!(
+            self,
+            Self::PrimeKey
+                | Self::TerraKey
+                | Self::SkyKey
+                | Self::InfernalKey
+                | Self::StarKey
+                | Self::PushBlock
+                | Self::MultiPushBlock
+                | Self::MonsterBlock
+                | Self::StartPoint { .. }
+        )
+    }
+
+    /// Puzzle Elements on Layer 5
+    pub fn is_puzzle_layer5(&self) -> bool {
+        matches!(
+            self,
+            Self::PrimeDoor
+                | Self::TerraDoor
+                | Self::SkyDoor
+                | Self::InfernalDoor
+                | Self::StarDoor
+                | Self::StatueRubble
+                | Self::PoisonTrail
+                | Self::Sign { .. }
+                | Self::Stack { .. }
+                | Self::ToggleSwitch { .. }
+        )
+    }
+
+    /// Monsters (Layer 5)
+    pub fn is_monster(&self) -> bool {
+        matches!(
+            self,
+            Self::AngryEye
+                | Self::BombBug { .. }
+                | Self::Statue
+                | Self::Slug { .. }
+                | Self::FlyingSnake { .. }
+        )
+    }
 }
 
 #[binwrite]

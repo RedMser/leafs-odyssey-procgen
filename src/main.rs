@@ -10,11 +10,43 @@ mod image_to_tiles;
 
 use std::{error::Error, fs, path::Path};
 
-use leafs_odyssey::{data::*, io::get_worlds_folder};
+use leafs_odyssey::{builder::*, data::*, io::get_worlds_folder};
 use terrain_gen::{generate_terrain, terrain_to_rooms};
 use image_to_tiles::image_to_tiles;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let mut world = World::new()
+        .with_metadata("Generat The Second", "This is cool stuff!")
+        .with_identity("44455666", Author::new("RedMser", "65D50024-C5A59B05"));
+    
+    let mut room = world.new_room((0, 0, 0))
+        .with_metadata("My Room", LOMusic::Marble);
+    
+    let tilemap = &mut room.tilemap;
+    tilemap.write(&LOTile::WoodenWall, &tilemap.select().add_rect(4, 2, 16, 12));
+    /*
+    tilemap.write(&LOTile::WoodenWallWithWindow, &tilemap.select().add_rect(4, 2, 16, 12).predicate_and(|_, _| {
+        rand::random::<f32>() < 0.1
+    }));
+    tilemap.write(&LOTile::WoodenFloor, &tilemap.select().add_rect(5, 3, 14, 10));
+    */
+    tilemap.write_on_layer(Tilemap::LAYER5, &LOTile::Sign { text: "hello there!".into() }, &tilemap.select().add(12, 8));
+
+    world.rooms.push(room);
+
+    unsafe {
+        let mut fa = std::fs::File::create(
+            Path::new(&get_worlds_folder()?).join("procgenGENERATED.world")
+        )?;
+
+        let mut world = LOWorld::try_from(world)?;
+        world.write_world(&mut fa)?;
+    }
+
+    Ok(())
+}
+
+fn old_main() -> Result<(), Box<dyn Error>> {
     //let rooms = terrain_to_rooms(generate_terrain(), (8, 8));
     let rooms = image_to_tiles("C:\\Users\\VRLand\\Desktop\\leaf.png");
 

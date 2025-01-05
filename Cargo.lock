@@ -499,6 +499,7 @@ dependencies = [
  "fastlem",
  "image",
  "palette",
+ "rand",
  "velcro",
 ]
 
