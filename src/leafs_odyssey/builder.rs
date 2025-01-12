@@ -39,7 +39,7 @@ impl World {
             position.1 * self.room_height as i16,
             position.2,
         );
-        let mut room = Room::new(position);
+        let mut room = Room::new_sized(position, self.room_width, self.room_height);
         self.last_room_id += 1;
         room.id = self.last_room_id;
         room
@@ -184,7 +184,7 @@ impl Tilemap {
             self.write_floor(tile, selection)
         } else if tile.is_wall() {
             self.write_wall(tile, selection)
-        } else if tile.is_obstacle() {
+        } else if tile.is_obstacle() || tile.is_puzzle_obstacle() {
             self.write_obstacle(tile, selection)
         } else if tile.is_trapdoor() {
             self.write_trapdoor(tile, selection)
@@ -207,7 +207,7 @@ impl Tilemap {
         self.write_on_layer(Self::LAYER5, &LOTile::None, selection);
     }
     pub fn write_obstacle(&mut self, tile: &LOTile, selection: &TileSelection) {
-        assert!(tile.is_obstacle());
+        assert!(tile.is_obstacle() || tile.is_puzzle_obstacle());
         self.write_on_layer(Self::LAYER2, tile, selection);
         self.write_on_layer(Self::LAYER3, &LOTile::None, selection);
         self.write_on_layer(Self::LAYER4, &LOTile::None, selection);
@@ -231,7 +231,7 @@ impl Tilemap {
         } else if tile.is_puzzle_layer5() || tile.is_monster() {
             Self::LAYER5
         } else {
-            panic!("Input is not a puzzle element")
+            panic!("Input {:?} is not a puzzle element", tile)
         };
 
         self.write_on_layer(layer, tile, selection);

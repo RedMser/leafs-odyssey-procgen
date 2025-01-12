@@ -7,36 +7,68 @@ pub mod leafs_odyssey;
 mod terrain_gen;
 mod null_sink;
 mod image_to_tiles;
+mod import_godot_string;
 
 use std::{error::Error, fs, path::Path};
 
+use import_godot_string::import_godot_string;
 use leafs_odyssey::{builder::*, data::*, io::get_worlds_folder};
 use terrain_gen::{generate_terrain, terrain_to_rooms};
 use image_to_tiles::image_to_tiles;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut world = World::new()
-        .with_metadata("Generat The Second", "This is cool stuff!")
-        .with_identity("44455666", Author::new("RedMser", "65D50024-C5A59B05"));
+        .with_metadata("What Go On", "This is cool stuff!")
+        .with_identity(&random_guid_segment(), Author::new("RedMser", "65D50024-C5A59B05"));
     
-    let mut room = world.new_room((0, 0, 0))
-        .with_metadata("My Room", LOMusic::Marble);
-    
-    let tilemap = &mut room.tilemap;
-    tilemap.write(&LOTile::WoodenWall, &tilemap.select().add_rect(4, 2, 16, 12));
-    /*
-    tilemap.write(&LOTile::WoodenWallWithWindow, &tilemap.select().add_rect(4, 2, 16, 12).predicate_and(|_, _| {
-        rand::random::<f32>() < 0.1
-    }));
-    tilemap.write(&LOTile::WoodenFloor, &tilemap.select().add_rect(5, 3, 14, 10));
-    */
-    tilemap.write_on_layer(Tilemap::LAYER5, &LOTile::Sign { text: "hello there!".into() }, &tilemap.select().add(12, 8));
+    //import_godot_string("./lop.txt", &mut world)?;
 
-    world.rooms.push(room);
+    world.room_width = 4;
+    world.room_height = 4;
+
+    for x in 0..32 {
+        for y in 0..24 {
+            let music = if x % 2 == 0 {
+                if y % 2 == 0 {
+                    LOMusic::Aqua
+                } else {
+                    LOMusic::Dust
+                }
+            } else {
+                if y % 2 == 0 {
+                    LOMusic::Superfluid
+                } else {
+                    LOMusic::Rapture
+                }
+            };
+            let mut room = world.new_room((x, y, 0))
+                .with_metadata(&format!("{x},{y}"), music);
+            room.tilemap = Tilemap::new(24, 16);
+            let tile = if x % 2 == 0 {
+                if y % 2 == 0 {
+                    LOTile::Gravel
+                } else {
+                    LOTile::Sand
+                }
+            } else {
+                if y % 2 == 0 {
+                    LOTile::RedFlowers
+                } else {
+                    LOTile::Dirt
+                }
+            };
+            room.tilemap.write(&tile, &room.tilemap.select_all());
+            room.tilemap.write(&LOTile::BombBug { direction: LODirection::Down }, &room.tilemap.select().add(8 + (x % 2) as usize, 8 + (y % 2) as usize));
+            if x == 0 && y == 0 {
+                room.tilemap.write(&LOTile::StartPoint { direction: LODirection::Down }, &room.tilemap.select().add(0, 0));
+            }
+            world.rooms.push(room);
+        }
+    }
 
     unsafe {
         let mut fa = std::fs::File::create(
-            Path::new(&get_worlds_folder()?).join("procgenGENERATED.world")
+            Path::new(&get_worlds_folder()?).join("procgenWTF.world")
         )?;
 
         let mut world = LOWorld::try_from(world)?;

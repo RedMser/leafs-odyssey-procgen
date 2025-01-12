@@ -248,7 +248,7 @@ pub enum LOMusic {
 
 #[binwrite]
 #[brw(little, repr = u32)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LODirection {
     Up = 0,
     Right = 1,
@@ -258,7 +258,7 @@ pub enum LODirection {
 
 #[binwrite]
 #[brw(little)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LOTile {
     // Seems to be treated the same as magic 0x01, 0x04, 0x07, 0x63 (and possibly every invalid value above that?)
     #[bw(magic = 0x00u32)]
@@ -697,7 +697,7 @@ impl LOTile {
 
 #[binwrite]
 #[brw(little)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LOConnection {
     pub x_position: u16,
     pub y_position: u16,
@@ -705,7 +705,7 @@ pub struct LOConnection {
 
 #[binwrite]
 #[brw(little)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LOStackElement {
     pub tile: LOStackTile,
     pub direction: LOStackDirection,
@@ -717,7 +717,7 @@ pub struct LOStackElement {
 
 #[binwrite]
 #[brw(little, repr = u16)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LOStackDirection {
     Up = 0,
     Right = 1,
@@ -727,7 +727,7 @@ pub enum LOStackDirection {
 
 #[binwrite]
 #[brw(little)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LOStackTile {
     #[bw(magic = 0x00u16)]
     None,
@@ -978,6 +978,23 @@ pub struct LORoomInfo {
     pub z_position: i16,
     #[bw(calc = 0)] // always
     unknown6: u16,
+}
+
+pub fn random_guid(segments: usize) -> String {
+    (0..segments)
+        .map(|_| random_guid_segment())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+pub fn random_guid_segment() -> String {
+    (0..8)
+        .map(|_| {
+            const HEX_DIGITS: &str = "0123456789ABCDEF";
+            let int = rand::random::<usize>() % 16;
+            HEX_DIGITS.chars().nth(int).unwrap()
+        })
+        .collect()
 }
 
 /// Given a GUID as provided by the game UI, converts it to fields that can be put into structs.
