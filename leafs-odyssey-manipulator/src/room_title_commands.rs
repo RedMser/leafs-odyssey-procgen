@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-use crate::leafs_odyssey::data::*;
+use leafs_odyssey_data::data::*;
 
 enum RoomCommand {
     Resize {

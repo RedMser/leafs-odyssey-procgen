@@ -4,7 +4,7 @@ use array2d::Array2D;
 use deltae::{DeltaE, LabValue};
 use palette::{encoding::Srgb, rgb::Rgb, white_point::D65, FromColor, Lab};
 
-use crate::leafs_odyssey::data::*;
+use leafs_odyssey_data::data::*;
 
 fn hex_to_lab(hex: &str) -> LabValue {
     let rgb = Rgb::<Srgb, u8>::from_str(hex).unwrap();

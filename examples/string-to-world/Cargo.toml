@@ -1,0 +1,7 @@
+[package]
+name = "string_to_world"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+leafs-odyssey-data = { path = "../../leafs-odyssey-data/" }

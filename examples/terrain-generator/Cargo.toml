@@ -1,0 +1,10 @@
+[package]
+name = "terrain_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+leafs-odyssey-data = { path = "../../leafs-odyssey-data/" }
+array2d = "0.3.2"
+fastlem = "0.1.4"
+velcro = "0.5.4"

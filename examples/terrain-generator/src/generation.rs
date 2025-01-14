@@ -1,8 +1,7 @@
 use array2d::Array2D;
-use binrw::NullString;
 use fastlem::{core::{parameters::TopographicalParameters, units::Length}, lem::generator::TerrainGenerator, models::surface::{builder::TerrainModel2DBulider, sites::Site2D, terrain::Terrain2D}};
 
-use crate::leafs_odyssey::data::*;
+use leafs_odyssey_data::data::*;
 
 const POINTS: usize = 256;
 const BOUNDS_MIN: Length = 0.0;
@@ -31,7 +30,7 @@ pub fn generate_terrain() -> Terrain2D {
 pub fn terrain_to_rooms(terrain: Terrain2D, room_count: (usize, usize)) -> Array2D<LOStemContent> {
     let room_template = LOStemContent::TileMapEdit {
         id: 0,
-        name: NullString::default(),
+        name: "".into(),
         width: 24,
         height: 16,
         layers: vec![],
@@ -107,7 +106,6 @@ pub fn terrain_to_rooms(terrain: Terrain2D, room_count: (usize, usize)) -> Array
             ]);
         }
     }
-    //println!("params {}x{} | {}x{}", room_count.0, room_count.1, room_size.0, room_size.1);
 
     rooms
 }

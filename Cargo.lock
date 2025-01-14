@@ -439,6 +439,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "image_art"
+version = "0.1.0"
+dependencies = [
+ "array2d",
+ "deltae",
+ "image",
+ "leafs-odyssey-data",
+ "palette",
+ "velcro",
+]
+
+[[package]]
 name = "imgref"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -490,17 +502,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5d4a7da358eff58addd2877a45865158f0d78c911d43a5784ceb7bbf52833b0"
 
 [[package]]
-name = "leafs-odyssey-procgen"
+name = "leafs-odyssey-data"
 version = "0.1.0"
 dependencies = [
  "array2d",
  "binrw",
- "deltae",
- "fastlem",
- "image",
- "palette",
  "rand",
- "velcro",
+]
+
+[[package]]
+name = "leafs-odyssey-manipulator"
+version = "0.1.0"
+dependencies = [
+ "binrw",
+ "leafs-odyssey-data",
 ]
 
 [[package]]
@@ -1073,6 +1088,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
+name = "string_to_world"
+version = "0.1.0"
+dependencies = [
+ "leafs-odyssey-data",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1118,6 +1140,16 @@ name = "terrain-graph"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "847a1d869090f9c9df4e19ee9a6e48f1864e4eca15a1bbd6a4ca925b606860f0"
+
+[[package]]
+name = "terrain_generator"
+version = "0.1.0"
+dependencies = [
+ "array2d",
+ "fastlem",
+ "leafs-odyssey-data",
+ "velcro",
+]
 
 [[package]]
 name = "thiserror"

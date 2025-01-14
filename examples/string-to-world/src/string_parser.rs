@@ -1,8 +1,8 @@
 use std::{collections::HashMap, error::Error, fs, io::BufRead, path::Path};
 
-use crate::{LODirection, LOMusic, LOTile, World};
+use leafs_odyssey_data::{builder::*, data::*};
 
-pub fn import_godot_string<P: AsRef<Path>>(path: P, world: &mut World) -> Result<(), Box<dyn Error>> {
+pub fn import_string<P: AsRef<Path>>(path: P, world: &mut World) -> Result<(), Box<dyn Error>> {
     let fd = fs::File::open_buffered(path)?;
 
     #[derive(Clone)]
@@ -52,7 +52,7 @@ pub fn import_godot_string<P: AsRef<Path>>(path: P, world: &mut World) -> Result
                 } else {
                     let row = line.split(' ');
                     let size_before = layer.tile_stacks.len();
-                    layer.tile_stacks.extend(row.map(|tile| import_godot_tile_stack(tile)));
+                    layer.tile_stacks.extend(row.map(|tile| import_tile_stack(tile)));
 
                     if layer.width.is_none() {
                         let size_after = layer.tile_stacks.len();
@@ -71,12 +71,9 @@ pub fn import_godot_string<P: AsRef<Path>>(path: P, world: &mut World) -> Result
 
         if let Some(room_title) = metadata.get(&format!("RoomTitle({},{},{})", position.0, position.1, position.2)) {
             room.name = room_title.into();
-        } else {
-            room.name = "".into(); // TODO: remove later
         }
         if let Some(room_music) = metadata.get(&format!("RoomMusic({},{},{})", position.0, position.1, position.2)) {
-            room.music = LOMusic::None;
-            todo!("remap string to music");
+            room.music = import_music(room_music);
         }
 
         let mut x = 0;
@@ -101,11 +98,11 @@ pub fn import_godot_string<P: AsRef<Path>>(path: P, world: &mut World) -> Result
     Ok(())
 }
 
-fn import_godot_tile_stack(tiles: &str) -> Vec<LOTile> {
-    tiles.split('+').map(|tile| import_godot_tile(tile)).collect()
+fn import_tile_stack(tiles: &str) -> Vec<LOTile> {
+    tiles.split('+').map(|tile| import_tile(tile)).collect()
 }
 
-fn import_godot_tile(tile: &str) -> LOTile {
+fn import_tile(tile: &str) -> LOTile {
     let tilemap: HashMap<&str, LOTile> =
         [("Grass", LOTile::Grass),
         ("Dirt", LOTile::Dirt),
@@ -203,4 +200,28 @@ fn import_godot_tile(tile: &str) -> LOTile {
         ("Lamppost", LOTile::Lamppost)]
         .iter().cloned().collect();
     tilemap.get(tile).unwrap().clone()
+}
+
+fn import_music(music: &str) -> LOMusic {
+    let music_map: HashMap<&str, LOMusic> =
+        [
+            ("None", LOMusic::None),
+            ("ThrowRock", LOMusic::ThrowRock),
+            ("Outside", LOMusic::Outside),
+            ("Quest", LOMusic::Quest),
+            ("Crystal", LOMusic::Crystal),
+            ("Peril", LOMusic::Peril),
+            ("Marble", LOMusic::Marble),
+            ("Descent", LOMusic::Descent),
+            ("Aqua", LOMusic::Aqua),
+            ("Beyond", LOMusic::Beyond),
+            ("Shards", LOMusic::Shards),
+            ("Superfluid", LOMusic::Superfluid),
+            ("Dust", LOMusic::Dust),
+            ("Dread", LOMusic::Dread),
+            ("Aspire", LOMusic::Aspire),
+            ("Rapture", LOMusic::Rapture),
+        ]
+        .iter().cloned().collect();
+    music_map.get(music).unwrap().clone()
 }

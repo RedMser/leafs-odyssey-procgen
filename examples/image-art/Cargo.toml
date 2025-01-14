@@ -1,0 +1,12 @@
+[package]
+name = "image_art"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+leafs-odyssey-data = { path = "../../leafs-odyssey-data/" }
+array2d = "0.3.2"
+deltae = "0.3.2"
+image = "0.25.5"
+palette = "0.7.6"
+velcro = "0.5.4"

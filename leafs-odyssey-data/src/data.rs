@@ -2,7 +2,7 @@ use std::{collections::VecDeque, error::Error, io::{Seek, Write}};
 
 use binrw::{binrw, BinResult, BinWrite, NullString};
 
-use crate::null_sink::NullSink;
+use crate::utils::NullSink;
 
 pub static mut HACKY_LIST: Vec<u32> = vec![];
 

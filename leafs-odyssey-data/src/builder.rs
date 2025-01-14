@@ -1,6 +1,6 @@
 use array2d::Array2D;
 
-use crate::leafs_odyssey::data::*;
+use crate::data::*;
 
 const INVALID_GUID: &'static str = "00000000";
 
