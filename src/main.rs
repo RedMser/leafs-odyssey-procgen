@@ -8,15 +8,39 @@ mod terrain_gen;
 mod null_sink;
 mod image_to_tiles;
 mod import_godot_string;
+mod room_title_commands;
 
 use std::{error::Error, fs, path::Path};
 
+use binrw::BinRead;
 use import_godot_string::import_godot_string;
 use leafs_odyssey::{builder::*, data::*, io::get_worlds_folder};
+use room_title_commands::apply_world_commands;
 use terrain_gen::{generate_terrain, terrain_to_rooms};
 use image_to_tiles::image_to_tiles;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let mut fa = std::fs::File::open(
+        Path::new(&get_worlds_folder()?).join("antichamber.world")
+    )?;
+
+    let mut world = LOWorld::read(&mut fa)?;
+
+    apply_world_commands(&mut world);
+    
+    unsafe {
+        let mut fa = std::fs::File::create(
+            Path::new(&get_worlds_folder()?).join("antichambernew.world")
+        )?;
+
+        let mut world = LOWorld::try_from(world)?;
+        world.write_world(&mut fa)?;
+    }
+
+    Ok(())
+}
+
+fn write_main() -> Result<(), Box<dyn Error>> {
     let mut world = World::new()
         .with_metadata("What Go On", "This is cool stuff!")
         .with_identity(&random_guid_segment(), Author::new("RedMser", "65D50024-C5A59B05"));
@@ -115,7 +139,7 @@ fn old_main() -> Result<(), Box<dyn Error>> {
                 guid_author1: parse_single_guid("65D50024")?,
                 guid_author2: parse_single_guid("C5A59B05")?,
                 world_revision: 1,
-                unknown6: 0,
+                _unknown4: 0,
             }),
             ..rooms.as_row_major()
                 .into_iter()
