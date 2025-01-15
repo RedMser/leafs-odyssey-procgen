@@ -1,12 +1,22 @@
 mod generation;
 
-use std::{error::Error, path::Path};
+use std::{env, error::Error, path::Path, process::exit};
 
 use leafs_odyssey_data::{data::*, io::get_worlds_folder};
 
 use crate::generation::*;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let args: Vec<String> = env::args().skip(1).collect();
+
+    if args.len() > 1 {
+        println!("USAGE: cargo run --bin terrain-generator -- [OUTPUT]");
+        println!("");
+        println!("OUTPUT: file name of world, defaults to \"generated_terrain.world\"");
+        println!("Will overwrite existing world file!");
+        exit(1);
+    }
+
     let rooms = terrain_to_rooms(generate_terrain(), (8, 8));
 
     let room_coords = rooms.indices_row_major()
@@ -37,7 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         },
         velcro::vec![
             LOStem::from_content(LOStemContent::TileZoneMap {
-                name: "Terrain".into(),
+                name: "[Generated] Terrain".into(),
                 room_info: room_coords,
                 description: "(no description provided)".into(),
                 author: "Rust".into(),
@@ -53,10 +63,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         ],
     );
 
+    let world_name = "generated_terrain.world".into();
+    let world_name = args.get(1).unwrap_or(&world_name);
+    let world_path = if world_name.contains('/') || world_name.contains('\\') {
+        Path::new(world_name)
+    } else {
+        &Path::new(&get_worlds_folder()?).join(world_name)
+    };
+    println!("Writing file \"{:?}\"...", world_path);
+
     unsafe {
-        let mut fa = std::fs::File::create(
-            Path::new(&get_worlds_folder()?).join("generated_terrain.world")
-        )?;
+        let mut fa = std::fs::File::create(world_path)?;
         world.write_world(&mut fa)?;
     }
 
