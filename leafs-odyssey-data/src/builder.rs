@@ -466,6 +466,31 @@ impl TryFrom<World> for LOWorld {
             })
             .collect();
 
+        let mut starting_room: Option<u32> = None;
+        let mut room_stems = vec![];
+        for room in value.rooms {
+            for tile in room.tilemap.get_layer(Tilemap::LAYER4).elements_row_major_iter() {
+                if matches!(tile, LOTile::StartPoint {..}) {
+                    if starting_room.is_some() {
+                        println!("Multiple start points found in world!");
+                    } else {
+                        starting_room = Some(room.id);
+                    }
+                }
+            }
+
+            let stem = LOStem::from_content(LOStemContent::from(room));
+            room_stems.push(stem);
+        }
+
+        let starting_room = match starting_room {
+            Some(starting_room) => starting_room,
+            None => {
+                println!("No start point found in world!");
+                1
+            },
+        };
+
         let author_guids = parse_guid(&value.author.guid)?;
         assert_eq!(author_guids.len(), 2);
 
@@ -478,14 +503,11 @@ impl TryFrom<World> for LOWorld {
             guid_author1: author_guids[0],
             guid_author2: author_guids[1],
             world_revision: value.revision,
-            start_room: 1, // TODO: compute properly
+            start_room: starting_room,
             compatibility: 0,
         })];
 
-        stems.append(&mut value.rooms
-            .into_iter()
-            .map(|room| LOStem::from_content(LOStemContent::from(room)))
-            .collect());
+        stems.append(&mut room_stems);
 
         Ok(Self::new(
             LOZone {
