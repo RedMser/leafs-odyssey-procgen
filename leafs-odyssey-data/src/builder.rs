@@ -478,7 +478,8 @@ impl TryFrom<World> for LOWorld {
             guid_author1: author_guids[0],
             guid_author2: author_guids[1],
             world_revision: value.revision,
-            _unknown4: 0,
+            start_room: 1, // TODO: compute properly
+            compatibility: 0,
         })];
 
         stems.append(&mut value.rooms
