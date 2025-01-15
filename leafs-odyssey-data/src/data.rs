@@ -522,6 +522,8 @@ pub enum LOTile {
         tiles_count: u32,
         #[br(count = tiles_count)]
         tiles: Vec<LOStackElement>,
+        #[bw(calc = 0)]
+        _unknown1: u32,
     },
     #[brw(magic = 0x30u32)]
     ToggleSwitch {
@@ -1000,6 +1002,7 @@ pub struct LOLayer {
     #[br(count = 6)]
     _unknown2: Vec<u8>,
     #[bw(calc = (*width as u32) * (*height as u32))]
+    #[br(assert(tile_count == width as u32 * height as u32))]
     tile_count: u32,
     #[bw(assert(tiles.len() as u32 == tile_count))]
     #[br(count = tile_count)]
