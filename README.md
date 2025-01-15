@@ -45,4 +45,4 @@ The world's GUID is **not** modified, which may impact existing player and repla
 
 Various library examples are found in the `examples` folder, some using the `data` API while others use the `builder` API.
 
-They can be run via `cargo run --bin NAME -- ARGS` whereas `NAME` is the folder name (dashes replaced with underscores). `ARGS` vary per example, see the usage string inside.
+They can be run via `cargo run --bin NAME -- ARGS` whereas `NAME` is the folder name. `ARGS` vary per example, see the usage string inside.
