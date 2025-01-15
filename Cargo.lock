@@ -430,7 +430,7 @@ dependencies = [
 
 [[package]]
 name = "image-art"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "array2d",
  "deltae",
@@ -503,7 +503,7 @@ checksum = "f5d4a7da358eff58addd2877a45865158f0d78c911d43a5784ceb7bbf52833b0"
 
 [[package]]
 name = "leafs-odyssey-data"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "array2d",
  "binrw",
@@ -512,7 +512,7 @@ dependencies = [
 
 [[package]]
 name = "leafs-odyssey-manipulator"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "binrw",
  "leafs-odyssey-data",
@@ -1089,7 +1089,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "string-to-world"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "leafs-odyssey-data",
 ]
@@ -1137,7 +1137,7 @@ checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 
 [[package]]
 name = "terrain-generator"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "array2d",
  "fastlem",
