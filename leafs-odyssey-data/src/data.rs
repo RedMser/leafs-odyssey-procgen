@@ -920,8 +920,7 @@ pub enum LOStackTile {
     CrumblyStoneBrickWall,
 
     // Puzzle Elements on Layer 4
-    #[brw(magic = b"\x0E\0\0\0\0\0")]
-    // TODO: is this actually due to the key? is this padding or an ID bit? help meh
+    #[brw(magic = 0x0Eu16)]
     PrimeKey,
     #[brw(magic = 0x1Eu16)]
     TerraKey,
