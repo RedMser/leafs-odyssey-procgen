@@ -2,6 +2,7 @@
 name = "leafs-odyssey-manipulator"
 version = "0.1.0"
 edition = "2021"
+default-run = "leafs-odyssey-manipulator"
 
 [dependencies]
 leafs-odyssey-data = { path = "../leafs-odyssey-data/" }
