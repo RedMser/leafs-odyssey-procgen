@@ -34,6 +34,10 @@ So for example, the following room title will move the room up by one full size,
 !rename,Hello World,move,0,-16,0,resize,12,8
 ```
 
+The world will also get `[MANIP]` suffixed in its title, so it can be distinguished in the world list.
+The world's revision number, as well as each edited room's revision number, is incremented by one.
+The world's GUID is **not** modified, which may impact existing player and replay data!
+
 ## Examples
 
 Various library examples are found in the `examples` folder, some using the `data` API while others use the `builder` API.

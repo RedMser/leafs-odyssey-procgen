@@ -17,7 +17,8 @@ enum RoomCommand {
     },
 }
 
-pub fn apply_world_commands(world: &mut LOWorld) {
+pub fn apply_world_commands(world: &mut LOWorld) -> bool {
+    let mut modified = false;
     let mut instructions = HashMap::<u32, Vec<RoomCommand>>::new();
 
     // Pass 1: collect commands immutably
@@ -61,7 +62,7 @@ pub fn apply_world_commands(world: &mut LOWorld) {
                     }
                 }
             },
-            LOStemContent::TileMapEdit { id, name, width, height, .. } => {
+            LOStemContent::TileMapEdit { id, name, width, height, revision, .. } => {
                 let Some(commands) = instructions.get(id) else {
                     continue;
                 };
@@ -85,9 +86,16 @@ pub fn apply_world_commands(world: &mut LOWorld) {
                     // fallback name
                     *name = "".into();
                 }
+
+                if !commands.is_empty() {
+                    *revision = *revision + 1;
+                    modified = true;
+                }
             },
         }
     }
+
+    modified
 }
 
 fn parse_commands(name: &str) -> Vec<RoomCommand> {

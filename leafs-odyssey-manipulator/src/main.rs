@@ -36,7 +36,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut world = LOWorld::read(&mut fa)?;
 
     println!("Applying modifications...");
-    apply_world_commands(&mut world);
+    let modified = apply_world_commands(&mut world);
+
+    if !modified {
+        println!("No room with commands was found! Check README for more info.");
+    }
+
+    for stem in &mut world.stems {
+        match &mut stem.content {
+            LOStemContent::TileZoneMap { name, world_revision, .. } => {
+                *name = (name.to_string() + " [MANIP]").into();
+                *world_revision = *world_revision + 1;
+            },
+            _ => {},
+        }
+    }
 
     let output_name = String::from("generated_") + &input_name;
     let mut output_name = args.get(1).map(|arg| arg.clone()).unwrap_or(output_name);
