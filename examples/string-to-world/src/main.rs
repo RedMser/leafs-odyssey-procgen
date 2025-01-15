@@ -2,7 +2,7 @@
 
 mod string_parser;
 
-use std::{env, error::Error, path::Path, process::exit};
+use std::{env, error::Error, path::PathBuf, process::exit};
 
 use leafs_odyssey_data::{builder::*, data::*, io::get_worlds_folder};
 
@@ -28,13 +28,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     import_string(&args[0], &mut world)?;
 
-    let world_name = "generated_string.world".into();
-    let world_name = args.get(1).unwrap_or(&world_name);
-    let world_path = if world_name.contains('/') || world_name.contains('\\') {
-        Path::new(world_name)
+    let mut world_name: String = "generated_string.world".into();
+    let world_path: PathBuf;
+    if world_name.contains('/') || world_name.contains('\\') {
+        world_path = PathBuf::from(&world_name);
     } else {
-        &Path::new(&get_worlds_folder()?).join(world_name)
-    };
+        if !world_name.ends_with(".world") {
+            world_name += ".world";
+        }
+        world_path = PathBuf::from(&get_worlds_folder()?).join(&world_name);
+    }
     println!("Writing file \"{:?}\"...", world_path);
 
     unsafe {

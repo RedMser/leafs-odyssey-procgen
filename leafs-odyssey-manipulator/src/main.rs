@@ -1,7 +1,7 @@
 mod room_title_commands;
 
 use binrw::BinRead;
-use std::{env, error::Error, path::Path, process::exit};
+use std::{env, error::Error, path::PathBuf, process::exit};
 
 use leafs_odyssey_data::{data::*, io::get_worlds_folder};
 use room_title_commands::apply_world_commands;
@@ -20,12 +20,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         exit(1);
     }
 
-    let input_name = &args[0];
-    let input_path = if input_name.contains('/') || input_name.contains('\\') {
-        Path::new(input_name)
+    let mut input_name = args[0].clone();
+    let input_path: PathBuf;
+    if input_name.contains('/') || input_name.contains('\\') {
+        input_path = PathBuf::from(&input_name);
     } else {
-        &Path::new(&get_worlds_folder()?).join(input_name)
-    };
+        if !input_name.ends_with(".world") {
+            input_name += ".world";
+        }
+        input_path = PathBuf::from(&get_worlds_folder()?).join(&input_name);
+    }
     
     println!("Reading world \"{:?}\"...", input_path);
     let mut fa = std::fs::File::open(input_path)?;
@@ -34,13 +38,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("Applying modifications...");
     apply_world_commands(&mut world);
 
-    let output_name = String::from("generated_") + input_name;
-    let output_name = args.get(1).unwrap_or(&output_name);
-    let output_path = if output_name.contains('/') || output_name.contains('\\') {
-        Path::new(output_name)
+    let output_name = String::from("generated_") + &input_name;
+    let mut output_name = args.get(1).map(|arg| arg.clone()).unwrap_or(output_name);
+    let output_path: PathBuf;
+    if output_name.contains('/') || output_name.contains('\\') {
+        output_path = PathBuf::from(&output_name);
     } else {
-        &Path::new(&get_worlds_folder()?).join(output_name)
-    };
+        if !output_name.ends_with(".world") {
+            output_name += ".world";
+        }
+        output_path = PathBuf::from(&get_worlds_folder()?).join(&output_name);
+    }
     println!("Writing file \"{:?}\"...", output_path);
 
     unsafe {
