@@ -101,7 +101,7 @@ fn parse_commands(name: &str) -> Vec<RoomCommand> {
     while !name_parts.is_empty() {
         let command_name = name_parts.pop_front().unwrap();
         match command_name {
-            "resize" => {
+            "size" | "resize" => {
                 commands.push(RoomCommand::Resize {
                     width: name_parts.pop_front().unwrap().parse().unwrap(),
                     height: name_parts.pop_front().unwrap().parse().unwrap(),
