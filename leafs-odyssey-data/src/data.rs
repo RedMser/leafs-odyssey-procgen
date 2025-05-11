@@ -754,7 +754,7 @@ pub struct LOStackElement {
     connections_count: u32,
     #[brw(if(matches!(tile, LOStackTile::ToggleSwitch)))]
     #[br(count = connections_count)]
-    connections: Vec<LOConnection>,
+    pub connections: Vec<LOConnection>,
 }
 
 #[binrw]
