@@ -775,7 +775,7 @@ pub enum LOStackTile {
     None,
 
     // Floor Tiles (Layer 1)
-    /// TODO: what happens for any of these?
+    /*
     #[brw(magic = 0x0Au16)]
     Grass,
     #[brw(magic = 0x0Bu16)]
@@ -820,9 +820,10 @@ pub enum LOStackTile {
     Cloud,
     #[brw(magic = 0x52u16)]
     Pit,
+    */
 
     // Walls (Layer 1)
-    /// TODO: what happens for any of these?
+    /*
     #[brw(magic = 0x02u16)]
     Wall,
     #[brw(magic = 0x05u16)]
@@ -843,9 +844,10 @@ pub enum LOStackTile {
     Cliff,
     #[brw(magic = 0x5Eu16)]
     RoughStone,
+    */
 
     // Obstacles (Layer 2)
-    /// TODO: what happens for any of these?
+    /*
     #[brw(magic = 0x14u16)]
     Bush,
     #[brw(magic = 0x4Cu16)]
@@ -872,52 +874,55 @@ pub enum LOStackTile {
     Curtain,
     #[brw(magic = 0x61u16)]
     Lamppost,
+    */
+
+    // Puzzle Elements on Layer 1
+    /*
+    #[brw(magic = 0x10u16)]
+    HotCoals,
+    #[brw(magic = 0x12u16)]
+    Ice,
+    #[brw(magic = 0x34u16)]
+    PacificFloor,
+    #[brw(magic = 0x35u16)]
+    BlockBarrier,
+    */
 
     // Puzzle Elements on Layer 2
-    /// TODO: what happens
+    /*
     #[brw(magic = 0x11u16)]
     SteppingStone,
-    /// TODO: what happens
     #[brw(magic = 0x1Du16)]
     Waypoint,
-    /// Not officially supported, can not be used due to stack blocking the tile I assume.
     #[brw(magic = 0x19u16)]
     LadderUp,
-    /// Not officially supported, can not be used due to stack blocking the tile I assume.
     #[brw(magic = 0x1Au16)]
     LadderDown,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x26u16)]
     TrapdoorOverPit,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x27u16)]
     TrapdoorOverWater,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x5Au16)]
     TrapdoorOverHotCoals,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x5Bu16)]
     TrapdoorOverIce,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x5Cu16)]
     TrapdoorOverPacificFloor,
-    /// TODO: what happens
     #[brw(magic = 0x18u16)]
     GoalStar,
+    */
 
     // Puzzle Elements on Layer 3
-    /// Not officially supported, but works as expected.
+    /*
     #[brw(magic = 0x06u16)]
     CrumblyWall,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x54u16)]
     CrumblyBrickWall,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x55u16)]
     CrumblyWoodenWall,
-    /// Not officially supported, but works as expected.
     #[brw(magic = 0x56u16)]
     CrumblyStoneBrickWall,
+    */
 
     // Puzzle Elements on Layer 4
     #[brw(magic = 0x0Eu16)]
@@ -936,37 +941,34 @@ pub enum LOStackTile {
     MultiPushBlock,
     #[brw(magic = 0x29u16)]
     MonsterBlock,
-    /// TODO: what happens
+    /*
     #[brw(magic = 0x03u16)]
     StartPoint,
+    */
 
     // Puzzle Elements on Layer 5
-    /// TODO: what happens
+    /*
     #[brw(magic = 0x0Fu16)]
     PrimeDoor,
-    /// TODO: what happens
     #[brw(magic = 0x1Fu16)]
     TerraDoor,
-    /// TODO: what happens
     #[brw(magic = 0x23u16)]
     SkyDoor,
-    /// TODO: what happens
     #[brw(magic = 0x21u16)]
     InfernalDoor,
-    /// TODO: what happens
     #[brw(magic = 0x25u16)]
     StarDoor,
+    */
     #[brw(magic = 0x28u16)]
     StatueRubble,
-    /// TODO: what happens
+    /*
     #[brw(magic = 0x2Cu16)]
     PoisonTrail,
-    /// TODO: what happens
     #[brw(magic = 0x37u16)]
     Sign,
-    /// TODO: what happens
     #[brw(magic = 0x62u16)]
     Stack,
+    */
     #[brw(magic = 0x30u16)]
     ToggleSwitch,
 
