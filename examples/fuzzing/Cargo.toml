@@ -1,0 +1,9 @@
+[package]
+name = "fuzzing"
+version = "0.1.1"
+edition = "2021"
+
+[dependencies]
+leafs-odyssey-data = { path = "../../leafs-odyssey-data/" }
+libafl = "0.15.2"
+libafl_bolts = "0.15.2"
