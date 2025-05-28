@@ -1,14 +1,17 @@
 use std::{
     collections::VecDeque,
     error::Error,
-    io::{Seek, Write},
+    io::{Seek, Write}, sync::{Arc, Mutex},
 };
 
 use binrw::{binrw, BinResult, BinWrite, NullString};
+use lazy_static::lazy_static;
 
 use crate::utils::NullSink;
 
-pub static mut HACKY_LIST: Vec<u32> = vec![];
+lazy_static! {
+    static ref HACKY_LIST: Arc<Mutex<Vec<u32>>> = Arc::new(Mutex::new(vec![]));
+}
 
 #[binrw]
 #[brw(little, magic = b"StFB")]
@@ -49,35 +52,43 @@ impl LOWorld {
         }
     }
 
-    pub unsafe fn write_world<W: Write + Seek>(
+    pub fn write_world<W: Write + Seek>(
         &mut self,
         write: &mut W,
     ) -> Result<(), Box<dyn Error>> {
-        // First pass: store stem lengths/offsets
+        // First pass: store stem lengths/offsets in HACKY_LIST.
         let mut sink = NullSink::new();
         self.write(&mut sink)?;
 
-        assert_eq!(HACKY_LIST.len() % 2, 0);
+        {
+            let hacky_list = HACKY_LIST.lock()?;
+            assert_eq!(hacky_list.len() % 2, 0);
+    
+            let mut funky_list = hacky_list
+                .chunks_exact(2)
+                .flat_map(|el| [el[0] - 4, el[1] - el[0] + 4])
+                .collect::<VecDeque<u32>>();
+    
+            self.zone_stem_offset = funky_list.pop_front().unwrap();
+            self.zone.stem_offset = self.zone_stem_offset;
+            self.zone.stem_length = funky_list.pop_front().unwrap();
+    
+            for room in &mut self.zone.rooms {
+                room.stem_offset = funky_list.pop_front().unwrap();
+                room.stem_length = funky_list.pop_front().unwrap();
+            }
 
-        let mut funky_list = HACKY_LIST
-            .chunks_exact(2)
-            .flat_map(|el| [el[0] - 4, el[1] - el[0] + 4])
-            .collect::<VecDeque<u32>>();
-
-        self.zone_stem_offset = funky_list.pop_front().unwrap();
-        self.zone.stem_offset = self.zone_stem_offset;
-        self.zone.stem_length = funky_list.pop_front().unwrap();
-
-        for room in &mut self.zone.rooms {
-            room.stem_offset = funky_list.pop_front().unwrap();
-            room.stem_length = funky_list.pop_front().unwrap();
+            assert!(funky_list.is_empty());
         }
 
-        assert!(funky_list.is_empty());
-
+        // Second pass: use previously stored values.
         self.write(write)?;
 
-        HACKY_LIST.clear();
+        {
+            let mut hacky_list = HACKY_LIST.lock()?;
+            hacky_list.clear();
+        }
+
         Ok(())
     }
 }
@@ -116,10 +127,16 @@ pub struct LORoom {
 
 #[binrw::writer(writer)]
 fn remember_stream_position(_: &u32) -> BinResult<()> {
-    unsafe {
-        HACKY_LIST.push(writer.stream_position().unwrap() as u32);
+    let hacky_list = HACKY_LIST.lock();
+    match hacky_list {
+        Ok(mut hacky_list) => {
+            hacky_list.push(writer.stream_position().unwrap() as u32);
+            Ok(())
+        },
+        Err(_) => {
+            BinResult::Err(binrw::Error::Custom { pos: 0, err: Box::new("Stream I/O locked") })
+        },
     }
-    Ok(())
 }
 
 #[binrw]

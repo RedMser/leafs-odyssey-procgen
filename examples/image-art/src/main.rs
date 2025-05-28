@@ -83,10 +83,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     println!("Writing file \"{:?}\"...", world_path);
 
-    unsafe {
-        let mut fa = std::fs::File::create(world_path)?;
-        world.write_world(&mut fa)?;
-    }
+    let mut fa = std::fs::File::create(world_path)?;
+    world.write_world(&mut fa)?;
 
     Ok(())
 }
