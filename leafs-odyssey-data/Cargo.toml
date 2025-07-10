@@ -11,3 +11,4 @@ array2d = "0.3.2"
 binrw = "0.14.1"
 lazy_static = "1.5.0"
 rand = "0.8.5"
+strum = { version = "0.27.1", features = ["derive"] }

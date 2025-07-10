@@ -296,7 +296,7 @@ pub struct LOStemMetadata {
 
 #[binrw]
 #[brw(little, repr = i32)]
-#[derive(Clone)]
+#[derive(Clone, strum::Display)]
 pub enum LOMusic {
     None = -1,
     ThrowRock = 0,
@@ -1076,4 +1076,8 @@ pub fn parse_guid(guid: &str) -> Result<Vec<u32>, String> {
 /// Segments are split by dashes.
 pub fn parse_single_guid(guid: &str) -> Result<u32, String> {
     u32::from_str_radix(guid, 16).map_err(|e| format!("Invalid GUID segment '{}': {}", guid, e))
+}
+
+pub fn to_guid_string(guid: u32) -> String {
+    format!("{:08X}", guid)
 }
