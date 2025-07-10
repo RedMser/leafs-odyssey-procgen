@@ -253,7 +253,7 @@ pub enum LOStemContent {
         #[bw(calc = TILE_MAP_EDIT_METADATA.to_vec())]
         #[br(count = TILE_MAP_EDIT_METADATA.len(), assert(metadata == TILE_MAP_EDIT_METADATA.to_vec()))]
         metadata: Vec<u8>,
-        #[bw(calc = layers.len() as u32)]
+        #[bw(calc = layers.len() as u32, assert(layers.len() <= 64))]
         layer_count: u32,
         /// Should have 5 elements.
         #[br(count = layer_count)]
@@ -535,7 +535,7 @@ pub enum LOTile {
     Sign { text: NullString },
     #[brw(magic = 0x62u32)]
     Stack {
-        #[bw(calc = tiles.len() as u32)]
+        #[bw(calc = tiles.len() as u32, assert(tiles.len() <= 16))]
         tiles_count: u32,
         #[br(count = tiles_count)]
         tiles: Vec<LOStackElement>,
