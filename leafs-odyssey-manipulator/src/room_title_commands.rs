@@ -1,135 +1,207 @@
-use std::collections::{HashMap, VecDeque};
+use std::{collections::HashMap, rc::Rc};
 
 use leafs_odyssey_data::data::*;
 
-enum RoomCommand {
-    Resize {
-        width: u16,
-        height: u16,
-    },
-    Move {
-        x_offset: i16,
-        y_offset: i16,
-        z_offset: i16,
-    },
-    Name {
-        name: String,
-    },
+pub trait RoomCommand {
+    fn names(&self) -> &'static [&'static str];
+    fn execute(&self, context: &mut RoomCommandContext) -> Result<(), String>;
 }
 
-pub fn apply_world_commands(world: &mut LOWorld) -> bool {
-    let mut modified = false;
-    let mut instructions = HashMap::<u32, Vec<RoomCommand>>::new();
+pub struct RoomCommandContext<'w> {
+    args: Vec<String>,
+    pub room_id: u32,
+    pub world: &'w mut LOWorld,
+}
 
-    // Pass 1: collect commands immutably
+impl<'w> RoomCommandContext<'w> {
+    pub fn new(args: Vec<String>, world: &'w mut LOWorld, room_id: u32) -> Self {
+        Self {
+            args,
+            room_id,
+            world,
+        }
+    }
+
+    pub fn get_room_info(&self) -> &LORoomInfo {
+        for stem in &self.world.stems {
+            match &stem.content {
+                LOStemContent::TileZoneMap { room_info, .. } => {
+                    for room in room_info {
+                        if room.id == self.room_id {
+                            return &room;
+                        }
+                    }
+                    break;
+                },
+                _ => {},
+            }
+        }
+        panic!("Invalid room id in RoomCommandContext! {}", self.room_id);
+    }
+
+    pub fn get_room_info_mut(&mut self) -> &mut LORoomInfo {
+        for stem in &mut self.world.stems {
+            match &mut stem.content {
+                LOStemContent::TileZoneMap { room_info, .. } => {
+                    for room in room_info {
+                        if room.id == self.room_id {
+                            return room;
+                        }
+                    }
+                    break;
+                },
+                _ => {},
+            }
+        }
+        panic!("Invalid room id in RoomCommandContext! {}", self.room_id);
+    }
+
+    pub fn pop_arg(&mut self) -> Option<String> {
+        self.args.pop()
+    }
+
+    pub fn has_arg(&self) -> bool {
+        !self.args.is_empty()
+    }
+
+    pub fn args_count(&self) -> usize {
+        self.args.len()
+    }
+}
+
+#[derive(Default)]
+pub struct WorldCommandsResult {
+    pub modified: bool,
+    pub errors: Vec<String>,
+}
+
+/// Returns the room name, followed by a list of args.
+pub fn parse_args(room_name: &str) -> (String, Vec<String>) {
+    // Args start after the delimiter.
+    const DELIMITER: &'static str = " -- ";
+
+    let (room_name, args_string) = if let Some(pos) = room_name.find(DELIMITER) {
+        let left = &room_name[..pos];
+        let right = &room_name[pos + DELIMITER.len()..];
+        (left, right)
+    } else {
+        // No commands, return room name as-is.
+        return (room_name.to_owned(), vec![]);
+    };
+
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = args_string.chars().peekable();
+    let mut in_quotes = false;
+
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => {
+                // Handle escaping inside or outside quotes
+                if let Some(&next) = chars.peek() {
+                    if next == '"' || next == '\\' {
+                        current.push(next);
+                        chars.next();
+                    } else {
+                        current.push(c);
+                    }
+                } else {
+                    current.push(c);
+                }
+            }
+            '"' => {
+                in_quotes = !in_quotes;
+                // Don't add quote to token
+            }
+            ' ' if !in_quotes => {
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
+                }
+                // skip adding spaces outside quotes
+            }
+            _ => current.push(c),
+        }
+    }
+
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+
+    (room_name.to_owned(), tokens)
+}
+
+pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C) -> WorldCommandsResult
+where
+    C: IntoIterator<Item = Rc<dyn RoomCommand>>,
+{
+    let mut results = WorldCommandsResult::default();
+    let mut room_args_map = HashMap::<u32, (String, Vec<String>)>::new();
+    let registered_commands = registered_commands
+        .into_iter()
+        .flat_map(|cmd| cmd.names().iter().map(move |name| (name, cmd.clone())))
+        .collect::<HashMap<_, _>>();
+
+    // Pass 1: collect command args immutably + stem contents
     for stem in &world.stems {
         match &stem.content {
             LOStemContent::TileMapEdit { id, name, .. } => {
-                let commands = parse_commands(&name.to_string());
-                if !commands.is_empty() {
-                    instructions.insert(
-                        *id,
-                        commands,
-                    );
+                let (room_name, mut args) = parse_args(&name.to_string());
+                if args.is_empty() {
+                    continue;
                 }
+
+                // We're using Vec::pop(), so args pop from end to start.
+                args.reverse();
+                room_args_map.insert(*id, (room_name, args));
             },
             _ => {},
         }
     }
 
-    // Pass 2: update world and rooms
-    for stem in &mut world.stems {
-        match &mut stem.content {
-            LOStemContent::TileZoneMap { ref mut room_info, .. } => {
-                for room in room_info {
-                    let Some(commands) = instructions.get(&room.id) else {
-                        continue;
-                    };
+    // Pass 2: run all commands
+    for (id, (room_name, args)) in room_args_map.into_iter() {
+        let mut ctx = RoomCommandContext::new(args, world, id);
 
-                    for command in commands {
-                        match command {
-                            RoomCommand::Resize { width, height } => {
-                                room.width = *width;
-                                room.height = *height;
-                            },
-                            RoomCommand::Move { x_offset, y_offset, z_offset } => {
-                                room.x_position += x_offset;
-                                room.y_position += y_offset;
-                                room.z_position += z_offset;
-                            },
-                            _ => {},
-                        }
-                    }
-                }
-            },
-            LOStemContent::TileMapEdit { id, name, width, height, revision, .. } => {
-                let Some(commands) = instructions.get(id) else {
-                    continue;
-                };
-
-                let mut renamed = false;
-                for command in commands {
-                    match command {
-                        RoomCommand::Name { name: new_name } => {
-                            *name = new_name.clone().into();
-                            renamed = true;
+        // Keep looping over args until we've exhausted the list.
+        'arg: loop {
+            let arg = ctx.pop_arg();
+            match arg {
+                Some(arg) => {
+                    // Check if arg is a valid command.
+                    let cmd = registered_commands.get(&arg.as_str());
+                    match cmd {
+                        Some(cmd) => {
+                            // Run the command!
+                            let res = cmd.execute(&mut ctx);
+                            if let Err(err) = res {
+                                results.errors.push(err);
+                            } else {
+                                results.modified = true;
+                            }
                         },
-                        RoomCommand::Resize { width: new_width, height: new_height } => {
-                            *width = *new_width;
-                            *height = *new_height;
+                        None => {
+                            results.errors.push(format!("Unknown command: {}", &arg).into());
+                            break 'arg;
                         },
-                        _ => {},
                     }
-                }
+                },
+                None => {
+                    break 'arg;
+                },
+            }
+        }
 
-                if !renamed {
-                    // fallback name
-                    *name = "".into();
-                }
-
-                if !commands.is_empty() {
-                    *revision = *revision + 1;
-                    modified = true;
-                }
-            },
+        // Rename the corresponding room.
+        for stem in &mut world.stems {
+            match &mut stem.content {
+                LOStemContent::TileMapEdit { name, .. } => {
+                    *name = room_name.clone().into();
+                },
+                _ => {},
+            }
         }
     }
 
-    modified
-}
-
-fn parse_commands(name: &str) -> Vec<RoomCommand> {
-    let mut commands = Vec::new();
-
-    if name.is_empty() || name.chars().next().unwrap() != '!' {
-        return commands;
-    }
-
-    let mut name_parts = name[1..].split(',').collect::<VecDeque<_>>();
-    while !name_parts.is_empty() {
-        let command_name = name_parts.pop_front().unwrap();
-        match command_name {
-            "size" | "resize" => {
-                commands.push(RoomCommand::Resize {
-                    width: name_parts.pop_front().unwrap().parse().unwrap(),
-                    height: name_parts.pop_front().unwrap().parse().unwrap(),
-                });
-            },
-            "move" => {
-                commands.push(RoomCommand::Move {
-                    x_offset: name_parts.pop_front().unwrap().parse().unwrap(),
-                    y_offset: name_parts.pop_front().unwrap().parse().unwrap(),
-                    z_offset: name_parts.pop_front().unwrap().parse().unwrap(),
-                });
-            },
-            "name" | "rename" => {
-                commands.push(RoomCommand::Name {
-                    name: name_parts.pop_front().unwrap().into(),
-                });
-            },
-            _ => panic!("unknown room command {}", command_name)
-        }
-    }
-
-    commands
+    results
 }

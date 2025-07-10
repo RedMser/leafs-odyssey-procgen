@@ -1,9 +1,10 @@
 [package]
 name = "leafs-odyssey-manipulator"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 default-run = "leafs-odyssey-manipulator"
 
 [dependencies]
 leafs-odyssey-data = { path = "../leafs-odyssey-data/" }
 binrw = "0.14.1"
+clap = { version = "4.5.41", features = ["derive"] }

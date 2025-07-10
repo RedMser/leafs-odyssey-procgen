@@ -1,0 +1,23 @@
+use std::rc::Rc;
+use crate::room_title_commands::RoomCommand;
+
+macro_rules! room_commands {
+    ( $( $mod_name:ident::$cmd_type:ident ),* $(,)? ) => {
+        $(
+            mod $mod_name;
+        )*
+
+        pub fn get_commands() -> Vec<Rc<dyn RoomCommand>> {
+            vec![
+                $(
+                    Rc::new($mod_name::$cmd_type),
+                )*
+            ]
+        }
+    };
+}
+
+room_commands! {
+    position::PositionCommand,
+    resize::ResizeCommand,
+}
