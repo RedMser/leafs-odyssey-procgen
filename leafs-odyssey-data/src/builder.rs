@@ -109,46 +109,40 @@ impl Room {
 }
 
 pub struct Tilemap {
-    pub layers: (
-        Array2D<LOTile>,
-        Array2D<LOTile>,
-        Array2D<LOTile>,
-        Array2D<LOTile>,
-        Array2D<LOTile>,
-    ),
+    pub layers: Vec<Array2D<LOTile>>,
 }
 
 impl Tilemap {
     /// Floors and Walls.
-    pub const LAYER1: u8 = 0;
+    pub const LAYER_FLOORS_WALLS: usize = 0;
     /// Obstacles, Trapdoors, Ladders, Waypoints, Goal Star, Pressure Plates, Sacrifice Altars and Toggle Floors.
-    pub const LAYER2: u8 = 1;
+    pub const LAYER_OBSTACLES: usize = 1;
     /// Crumbly Walls, Toggle Doors and Monster Gates.
-    pub const LAYER3: u8 = 2;
+    pub const LAYER_DOORS: usize = 2;
     /// Keys, Push Blocks, Start Point.
-    pub const LAYER4: u8 = 3;
+    pub const LAYER_OBJECTS: usize = 3;
     /// Monsters, Key Doors, Statue Rubble, Poison Trail, Sign, Stacks and Toggle Switches.
-    pub const LAYER5: u8 = 4;
+    pub const LAYER_ITEMS_MONSTERS: usize = 4;
 
-    pub const LAYER_INDICES: std::ops::RangeInclusive<u8> = (Self::LAYER1..=Self::LAYER5);
+    pub const LAYER_INDICES: std::ops::RangeInclusive<usize> = (Self::LAYER_FLOORS_WALLS..=Self::LAYER_ITEMS_MONSTERS);
 
     pub fn new(width: u16, height: u16) -> Self {
         Self {
-            layers: (
+            layers: vec![
                 Array2D::filled_with(LOTile::Grass, height as usize, width as usize),
                 Array2D::filled_with(LOTile::None, height as usize, width as usize),
                 Array2D::filled_with(LOTile::None, height as usize, width as usize),
                 Array2D::filled_with(LOTile::None, height as usize, width as usize),
                 Array2D::filled_with(LOTile::None, height as usize, width as usize),
-            ),
+            ],
         }
     }
 
     pub fn get_width(&self) -> u16 {
-        self.layers.0.num_columns() as u16
+        self.layers[Self::LAYER_FLOORS_WALLS].num_columns() as u16
     }
     pub fn get_height(&self) -> u16 {
-        self.layers.0.num_rows() as u16
+        self.layers[Self::LAYER_FLOORS_WALLS].num_rows() as u16
     }
 
     pub fn select_value(&self, selection: bool) -> TileSelection {
@@ -163,7 +157,7 @@ impl Tilemap {
         self.select_value(false)
     }
 
-    pub fn write_on_layer(&mut self, layer: u8, tile: &LOTile, selection: &TileSelection) {
+    pub fn write_on_layer(&mut self, layer: usize, tile: &LOTile, selection: &TileSelection) {
         let layer = self.get_layer_mut(layer);
 
         for ((row, col), value) in selection.bools.enumerate_row_major() {
@@ -172,10 +166,10 @@ impl Tilemap {
             }
         }
     }
-    pub fn write_on_layer_if<F>(&mut self, layer: u8, tile: &LOTile, selection: &TileSelection, predicate: F)
+    pub fn write_on_layer_if<F>(&mut self, layer: usize, tile: &LOTile, selection: &TileSelection, predicate: F)
         where F: Fn((usize, usize), &LOTile) -> bool {
         self.write_on_layer(layer, tile, &selection.clone().predicate_and(|x, y| {
-            let iter_tile = self.layers.1.get(y, x).unwrap();
+            let iter_tile = self.layers[layer].get(y, x).unwrap();
             predicate((x, y), &iter_tile)
         }));
     }
@@ -194,83 +188,63 @@ impl Tilemap {
     }
     pub fn write_floor(&mut self, tile: &LOTile, selection: &TileSelection) {
         assert!(tile.is_floor());
-        self.write_on_layer(Self::LAYER1, tile, selection);
+        self.write_on_layer(Self::LAYER_FLOORS_WALLS, tile, selection);
     }
     pub fn write_wall(&mut self, tile: &LOTile, selection: &TileSelection) {
         assert!(tile.is_wall());
-        self.write_on_layer(Self::LAYER1, tile, selection);
-        self.write_on_layer_if(Self::LAYER2, &LOTile::None, selection, |_, iter_tile| {
+        self.write_on_layer(Self::LAYER_FLOORS_WALLS, tile, selection);
+        self.write_on_layer_if(Self::LAYER_OBSTACLES, &LOTile::None, selection, |_, iter_tile| {
             matches!(iter_tile, LOTile::Pillar) || !iter_tile.is_puzzle_obstacle()
         });
-        self.write_on_layer(Self::LAYER3, &LOTile::None, selection);
-        self.write_on_layer(Self::LAYER4, &LOTile::None, selection);
-        self.write_on_layer(Self::LAYER5, &LOTile::None, selection);
+        self.write_on_layer(Self::LAYER_DOORS, &LOTile::None, selection);
+        self.write_on_layer(Self::LAYER_OBJECTS, &LOTile::None, selection);
+        self.write_on_layer(Self::LAYER_ITEMS_MONSTERS, &LOTile::None, selection);
     }
     pub fn write_obstacle(&mut self, tile: &LOTile, selection: &TileSelection) {
         assert!(tile.is_obstacle() || tile.is_puzzle_obstacle());
-        self.write_on_layer(Self::LAYER2, tile, selection);
-        self.write_on_layer(Self::LAYER3, &LOTile::None, selection);
-        self.write_on_layer(Self::LAYER4, &LOTile::None, selection);
-        self.write_on_layer(Self::LAYER5, &LOTile::None, selection);
+        self.write_on_layer(Self::LAYER_OBSTACLES, tile, selection);
+        self.write_on_layer(Self::LAYER_DOORS, &LOTile::None, selection);
+        self.write_on_layer(Self::LAYER_OBJECTS, &LOTile::None, selection);
+        self.write_on_layer(Self::LAYER_ITEMS_MONSTERS, &LOTile::None, selection);
     }
     pub fn write_trapdoor(&mut self, tile: &LOTile, selection: &TileSelection) {
         assert!(tile.is_trapdoor());
         let floors = tile.get_trapdoor_floors();
         let canonical_floor = &floors[0];
         // Write canonical floor if the current floor is not a valid trapdoor floor.
-        self.write_on_layer_if(Self::LAYER1, canonical_floor, selection, |_, iter_tile| {
+        self.write_on_layer_if(Self::LAYER_FLOORS_WALLS, canonical_floor, selection, |_, iter_tile| {
             !floors.iter().any(|floor_tile| iter_tile.same_type_as(floor_tile))
         });
-        self.write_on_layer(Self::LAYER2, tile, selection);
+        self.write_on_layer(Self::LAYER_OBSTACLES, tile, selection);
     }
     pub fn write_puzzle_element(&mut self, tile: &LOTile, selection: &TileSelection) {
         let layer = if tile.is_puzzle_layer3() {
-            Self::LAYER3
+            Self::LAYER_DOORS
         } else if tile.is_puzzle_layer4() {
-            Self::LAYER4
+            Self::LAYER_OBJECTS
         } else if tile.is_puzzle_layer5() || tile.is_monster() {
-            Self::LAYER5
+            Self::LAYER_ITEMS_MONSTERS
         } else {
             panic!("Input {:?} is not a puzzle element", tile)
         };
 
         self.write_on_layer(layer, tile, selection);
         if tile.is_crumbly_wall() {
-            self.write_on_layer(Self::LAYER4, &LOTile::None, selection);
-            self.write_on_layer(Self::LAYER5, &LOTile::None, selection);
+            self.write_on_layer(Self::LAYER_OBJECTS, &LOTile::None, selection);
+            self.write_on_layer(Self::LAYER_ITEMS_MONSTERS, &LOTile::None, selection);
         }
     }
 
-    pub fn get_layer(&self, layer: u8) -> &Array2D<LOTile> {
-        match layer {
-            Self::LAYER1 => &self.layers.0,
-            Self::LAYER2 => &self.layers.1,
-            Self::LAYER3 => &self.layers.2,
-            Self::LAYER4 => &self.layers.3,
-            Self::LAYER5 => &self.layers.4,
-            _ => panic!("Layer out of bounds."),
-        }
+    pub fn get_layer(&self, layer: usize) -> &Array2D<LOTile> {
+        &self.layers[layer]
     }
 
-    pub fn get_layer_mut(&mut self, layer: u8) -> &mut Array2D<LOTile> {
-        match layer {
-            Self::LAYER1 => &mut self.layers.0,
-            Self::LAYER2 => &mut self.layers.1,
-            Self::LAYER3 => &mut self.layers.2,
-            Self::LAYER4 => &mut self.layers.3,
-            Self::LAYER5 => &mut self.layers.4,
-            _ => panic!("Layer out of bounds."),
-        }
+    pub fn get_layer_mut(&mut self, layer: usize) -> &mut Array2D<LOTile> {
+        &mut self.layers[layer]
     }
 
     pub fn into_layers(self) -> Vec<LOLayer> {
-        vec![
-            Self::into_layer(self.layers.0),
-            Self::into_layer(self.layers.1),
-            Self::into_layer(self.layers.2),
-            Self::into_layer(self.layers.3),
-            Self::into_layer(self.layers.4),
-        ]
+        self.layers.into_iter().map(|layer| Self::into_layer(layer)).collect()
     }
 
     fn into_layer(layer: Array2D<LOTile>) -> LOLayer {
@@ -469,7 +443,7 @@ impl TryFrom<World> for LOWorld {
         let mut starting_room: Option<u32> = None;
         let mut room_stems = vec![];
         for room in value.rooms {
-            for tile in room.tilemap.get_layer(Tilemap::LAYER4).elements_row_major_iter() {
+            for tile in room.tilemap.get_layer(Tilemap::LAYER_OBJECTS).elements_row_major_iter() {
                 if matches!(tile, LOTile::StartPoint {..}) {
                     if starting_room.is_some() {
                         println!("Multiple start points found in world!");
