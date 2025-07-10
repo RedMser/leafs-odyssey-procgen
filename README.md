@@ -16,32 +16,26 @@ Library for reading and writing world data. Includes two APIs:
 
 A command line tool to load an existing world and apply changes to each room.
 
-Usage: `./leafs-odyssey-manipulator.exe foo bar` loads `foo.world` from the worlds directory and saves a manipulated version to `bar.world`.
-Can also be run using `cargo run --release -- foo bar` instead.
+Basic usage: `./leafs-odyssey-manipulator.exe foo` loads `foo.world` from the worlds directory and saves a manipulated version to `generated_foo.world`.
+Can also be run using `cargo run --release -- foo` instead.
 
-If a room has a certain format in its **title**, it will be manipulated by the tool:
+Other command line arguments can be listed via `--help`, but the most common ones are:
+
+- `--title Blah` changes the name of the world in the select screen (by default, it appends `[MANIP]` to the end of the name).
+- `--dump --dryrun` will print a list of all rooms and their IDs, which can be helpful for weird move shenanigans. It also won't output a manipulated version of the world. Use `--dump-after` instead to see how your changes affected the metadata.
+
+If a room has a certain format in its **title**, it will be manipulated by the tool, for example:
 
 ```
-!command1,arg1,arg2,command2,arg1,arg2,arg3,...
+This is my room -- move 24 0 0 size 12 8
 ```
 
 Following commands are supported:
 
-- `move,X,Y,Z` - moves this room by this many **tiles**. So to move a room by a full size, X must be a multiple of 24 and Y must be a multiple of 16. +X is east, +Y is south, +Z is up.
-- `size,W,H` - changes the room's size to the given width/height. Rooms are 24x16 by default, but can be made smaller or bigger. Note that the full 24x16 tilemap is used regardless of this size, as the game expects it.
-- `name,NAME` - sets the name of the room (may not contain a comma)
+- `move X Y Z` - moves this room by this many **tiles**. So to move a room by a full size, X must be a multiple of 24 and Y must be a multiple of 16. +X is east, +Y is south, +Z is up.
+- `size W H` - changes the room's size to the given width/height. Rooms are 24x16 by default, but can be made smaller or bigger. Note that the tilemap is not resized, and stays at 24x16 size.
 
-So for example, the following room title will move the room up by one full size, half its size, and give it a title:
-
-```
-!rename,Hello World,move,0,-16,0,resize,12,8
-```
-
-The world will also get `[MANIP]` suffixed in its title, so it can be distinguished in the world list.
-The world's revision number, as well as each edited room's revision number, is incremented by one.
-The world's GUID is **not** modified, which may impact existing player and replay data! **Create backups!**
-
-## Examples
+## Other examples
 
 Various library examples are found in the `examples` folder, some using the `data` API while others use the `builder` API.
 
