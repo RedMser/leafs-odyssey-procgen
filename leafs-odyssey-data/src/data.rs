@@ -209,6 +209,7 @@ const TILE_MAP_EDIT_METADATA: [u8; 0x199] = [
 #[brw(little)]
 #[derive(Clone)]
 pub enum LOStemContent {
+    /// Metadata and layout of the world.
     #[brw(magic = b"tile_zone_map\0")]
     TileZoneMap {
         #[bw(calc = 0)] // always
@@ -237,6 +238,7 @@ pub enum LOStemContent {
         _room_count_again: u32,
         compatibility: u32,
     },
+    /// Tile information for a specific room.
     #[brw(magic = b"tilemap_edit\0")]
     TileMapEdit {
         #[bw(calc = 0)] // always
