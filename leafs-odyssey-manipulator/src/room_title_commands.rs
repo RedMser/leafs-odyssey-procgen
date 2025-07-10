@@ -131,7 +131,7 @@ pub fn parse_args(room_name: &str) -> (String, Vec<String>) {
     (room_name.to_owned(), tokens)
 }
 
-pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C) -> WorldCommandsResult
+pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool) -> WorldCommandsResult
 where
     C: IntoIterator<Item = Rc<dyn RoomCommand>>,
 {
@@ -164,6 +164,7 @@ where
         let mut ctx = RoomCommandContext::new(args, world, id);
 
         // Keep looping over args until we've exhausted the list.
+        let mut modified = false;
         'arg: loop {
             let arg = ctx.pop_arg();
             match arg {
@@ -177,6 +178,7 @@ where
                             if let Err(err) = res {
                                 results.errors.push(err);
                             } else {
+                                modified = true;
                                 results.modified = true;
                             }
                         },
@@ -195,8 +197,11 @@ where
         // Rename the corresponding room.
         for stem in &mut world.stems {
             match &mut stem.content {
-                LOStemContent::TileMapEdit { name, .. } => {
+                LOStemContent::TileMapEdit { name, revision, .. } => {
                     *name = room_name.clone().into();
+                    if modified && increment_room_revision {
+                        *revision = *revision + 1;
+                    }
                 },
                 _ => {},
             }

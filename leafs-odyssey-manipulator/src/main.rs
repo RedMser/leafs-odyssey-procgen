@@ -20,13 +20,17 @@ struct Args {
     #[arg(short = 't', long = "title")]
     pub world_title: Option<String>,
     /// Set this flag to keep the same world GUID.
-    /// By default, the GUID is modified automatically to avoid the world being treated as identical by the game.
+    /// By default, the GUID is incremented automatically to avoid the world being treated as identical by the game.
     #[arg(long, action)]
     pub keep_guid: bool,
     /// Set this flag to keep the same world revision.
-    /// By default, the GUID is modified automatically to avoid the world being treated as unchanged compared to its original counterpart.
+    /// By default, the GUID is incremented automatically to avoid the world being treated as unchanged compared to its original counterpart.
     #[arg(long, action)]
-    pub keep_revision: bool,
+    pub keep_world_revision: bool,
+    /// Set this flag to keep the same room revision.
+    /// By default, the GUID of every room that has commands in it is incremented automatically to avoid the room being treated as unchanged compared to its original counterpart.
+    #[arg(long, action)]
+    pub keep_room_revision: bool,
     /// Print unaltered world and room metadata.
     #[arg(long, action)]
     pub dump: bool,
@@ -148,7 +152,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     println!("Applying modifications...");
-    let results = apply_world_commands(&mut world, commands::get_commands());
+    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision);
 
     if !results.modified {
         println!("No room with commands was found! Check README for more info.");
@@ -160,7 +164,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let new_world_title = args.world_title.unwrap_or_else(|| name.to_string() + " [MANIP]");
                 *name = new_world_title.into();
 
-                if !args.keep_revision {
+                if !args.keep_world_revision {
                     *world_revision = *world_revision + 1;
                 }
                 if !args.keep_guid {
