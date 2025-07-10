@@ -69,6 +69,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut world = LOWorld::try_from(world)?;
     world.write_world(&mut fa)?;
-    }
+
     Ok(())
 }
