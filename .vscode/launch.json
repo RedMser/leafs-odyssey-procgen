@@ -4,7 +4,7 @@
         "type": "lldb",
         "request": "launch",
         "name": "Launch",
-        "program": "${workspaceFolder}/target/debug/leafs-odyssey-procgen.exe",
+        "program": "${workspaceFolder}/target/debug/leafs-odyssey-manipulator.exe",
         "args": [],
         "cwd": "${workspaceFolder}"
     }],
