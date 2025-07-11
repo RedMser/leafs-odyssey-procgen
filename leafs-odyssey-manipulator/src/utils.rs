@@ -11,7 +11,7 @@ where
     let mut tilemap = Tilemap::from(&mut *current_layers);
     let selection = selection_fn(&tilemap);
 
-    if to_write.len() == current_layers.len() {
+    if to_write.len() == current_layers.len() || to_write.len() >= 5 {
         // Full replace of this coordinate.
         for layer in 0..to_write.len() {
             tilemap.write_on_layer(layer, &to_write[layer], &selection);

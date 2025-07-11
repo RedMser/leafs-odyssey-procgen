@@ -66,7 +66,7 @@ Currently, "complex" tiles are not supported. Monsters always face down, wiring 
 
 When writing tiles, there are two modes:
 
-- If you specify exactly as many elements as there are layers (5 by default), then the entire coordinate is replaced. Order is from bottom to top layer. Check `Tilemap::LAYER_*` constants for default layer info. Also stacks count as a single layer (since they're internally a single tile with additional info). Use `None` as filler.
+- If you specify exactly as many elements as there are layers (5 by default), or if you specify 5 or more elements, then the entire coordinate is replaced. Order is from bottom to top layer. Check `Tilemap::LAYER_*` constants for default layer info. Also stacks count as a single layer (since they're internally a single tile with additional info). Use `None` as filler.
 - If you specify any less than that, then a "smart merge" is done instead, which tries to keep existing contents and use appropriate layers automatically (e.g. if you specify `Sand`, it won't touch any objects but only replace the floor type).
 
 ### Condition syntax
