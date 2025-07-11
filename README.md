@@ -34,6 +34,47 @@ Following commands are supported:
 
 - `move X Y Z` - moves this room by this many **tiles**. So to move a room by a full size, X must be a multiple of 24 and Y must be a multiple of 16. +X is east, +Y is south, +Z is up.
 - `size W H` - changes the room's size to the given width/height. Rooms are 24x16 by default, but can be made smaller or bigger. Note that the tilemap is not resized, and stays at 24x16 size.
+- `tile X Y T` - places tile T at the given coordinate. Syntax details on T are below.
+- `rect X1 Y1 X2 Y2 T` - places tile T within the given rectangle area. Syntax details on T are below.
+- `replace C T` - finds all tiles that match the condition C, then runs the tile command on them with T. It's not really a true find-and-replace, but just a complex way to specify coordinates. Syntax details on C and T are below.
+- `rename N` - rename the room to N. While the room title (anything before --) is used, there's a 64 characters limit. You can use scripts to circumvent the length limit of room name + commands.
+- `script S` - runs commands from the script file named S. It's a path relative to the current working directory. If no file extension is specified, it defaults to `.cfg`. You can use new lines synonymously to spaces in script files!
+
+<!--
+TODO: docs for not yet implemented commands:
+
+- `addlayer N T` - adds N amount of new tilemap layers, each filled with T, to the end of the room's tilemap list. There's a limit of 64 tilemap layers per room. Syntax details on T are below.
+- `removelayer I` - removes the tilemap layer at index I.
+- `layersize I W H` - resizes tilemap layer I to the given size.
+-->
+
+Arguments of commands may only include spaces if you surround them with "quotes". You can escape literal quotes using a backslash.
+Commands are executed in reading order, so the first command runs first.
+
+### Tile syntax
+
+For tile-related commands (argument "T"), syntax is as follows.
+
+A simple example to start with is `Sand+(PushBlock+TerraKey*2)` which places a stack on sand, with the stack consisting of a push block and two terra keys.
+
+Basically, you use the name of a tile as defined in `LOTile` enum in `data.rs`.
+A plus `+` means you go up a layer.
+Parentheses `( )` define a stack (max height is 16).
+Multiplication like `T*n` can be used to substitute `T+T+T+...` n-times.
+
+Currently, "complex" tiles are not supported. Monsters always face down, wiring is not connected, and signs have no text.
+
+When writing tiles, there are two modes:
+
+- If you specify exactly as many elements as there are layers (5 by default), then the entire coordinate is replaced. Order is from bottom to top layer. Check `Tilemap::LAYER_*` constants for default layer info. Also stacks count as a single layer (since they're internally a single tile with additional info). Use `None` as filler.
+- If you specify any less than that, then a "smart merge" is done instead, which tries to keep existing contents and use appropriate layers automatically (e.g. if you specify `Sand`, it won't touch any objects but only replace the floor type).
+
+### Condition syntax
+
+For condition-related commands (argument "C"), syntax is nearly equivalent to tile syntax "T" above.
+
+- If you specify exactly as many elements as there are layers (5 by default), then an exact match is required. So every layer is checked individually, and only if each tile type matches, will the condition match. Use `None` as filler.
+- If you specify any less than that, then the system does a loose check. So filtering for only `BombBug` won't care about the floor type that a bomb bug is on.
 
 ## Other examples
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
 use leafs_odyssey_data::data::*;
 
@@ -7,23 +7,31 @@ pub trait RoomCommand {
     fn execute(&self, context: &mut RoomCommandContext) -> Result<(), String>;
 }
 
+pub struct WorldCommandContext<'w> {
+    pub world: &'w mut LOWorld,
+    pub script_cache: &'w mut HashMap<PathBuf, String>,
+    pub verbose: bool,
+}
+
 pub struct RoomCommandContext<'w> {
     args: Vec<String>,
     pub room_id: u32,
-    pub world: &'w mut LOWorld,
+    pub override_room_name: Option<String>,
+    pub env: &'w mut WorldCommandContext<'w>,
 }
 
 impl<'w> RoomCommandContext<'w> {
-    pub fn new(args: Vec<String>, world: &'w mut LOWorld, room_id: u32) -> Self {
+    pub fn new(args: Vec<String>, world: &'w mut WorldCommandContext<'w>, room_id: u32) -> Self {
         Self {
             args,
             room_id,
-            world,
+            override_room_name: None,
+            env: world,
         }
     }
 
     pub fn get_room_info(&self) -> &LORoomInfo {
-        for stem in &self.world.stems {
+        for stem in &self.env.world.stems {
             match &stem.content {
                 LOStemContent::TileZoneMap { room_info, .. } => {
                     for room in room_info {
@@ -40,7 +48,7 @@ impl<'w> RoomCommandContext<'w> {
     }
 
     pub fn get_room_info_mut(&mut self) -> &mut LORoomInfo {
-        for stem in &mut self.world.stems {
+        for stem in &mut self.env.world.stems {
             match &mut stem.content {
                 LOStemContent::TileZoneMap { room_info, .. } => {
                     for room in room_info {
@@ -57,7 +65,11 @@ impl<'w> RoomCommandContext<'w> {
     }
 
     pub fn pop_arg(&mut self) -> Option<String> {
-        self.args.pop()
+        let arg = self.args.pop();
+        if self.env.verbose {
+            println!("[v] Pop arg {}", &arg.clone().unwrap_or("(null)".into()));
+        }
+        arg
     }
 
     pub fn has_arg(&self) -> bool {
@@ -66,6 +78,14 @@ impl<'w> RoomCommandContext<'w> {
 
     pub fn args_count(&self) -> usize {
         self.args.len()
+    }
+
+    /// args should not be reversed (so keep it in reading order)!
+    pub fn push_args(&mut self, args: Vec<String>) {
+        let i = self.args.len();
+        for arg in args {
+            self.args.insert(i, arg);
+        }
     }
 }
 
@@ -89,9 +109,15 @@ pub fn parse_args(room_name: &str) -> (String, Vec<String>) {
         return (room_name.to_owned(), vec![]);
     };
 
+    let tokens = parse_args_only(args_string);
+
+    (room_name.to_owned(), tokens)
+}
+
+pub fn parse_args_only(room_args: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current = String::new();
-    let mut chars = args_string.chars().peekable();
+    let mut chars = room_args.chars().peekable();
     let mut in_quotes = false;
 
     while let Some(c) = chars.next() {
@@ -113,7 +139,7 @@ pub fn parse_args(room_name: &str) -> (String, Vec<String>) {
                 in_quotes = !in_quotes;
                 // Don't add quote to token
             }
-            ' ' if !in_quotes => {
+            ' ' | '\r' | '\n' if !in_quotes => {
                 if !current.is_empty() {
                     tokens.push(current.clone());
                     current.clear();
@@ -128,10 +154,10 @@ pub fn parse_args(room_name: &str) -> (String, Vec<String>) {
         tokens.push(current);
     }
 
-    (room_name.to_owned(), tokens)
+    tokens
 }
 
-pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool) -> WorldCommandsResult
+pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool, verbose: bool) -> WorldCommandsResult
 where
     C: IntoIterator<Item = Rc<dyn RoomCommand>>,
 {
@@ -160,12 +186,26 @@ where
     }
 
     // Pass 2: run all commands
+    let mut script_cache = HashMap::new();
     for (id, (room_name, args)) in room_args_map.into_iter() {
-        let mut ctx = RoomCommandContext::new(args, world, id);
+        let mut env = WorldCommandContext {
+            world,
+            script_cache: &mut script_cache,
+            verbose,
+        };
+        let mut ctx = RoomCommandContext::new(args, &mut env, id);
 
         // Keep looping over args until we've exhausted the list.
         let mut modified = false;
+        let mut i = 0;
+        const LIMIT: i32 = 50000;
         'arg: loop {
+            i += 1;
+            if i >= LIMIT {
+                println!("ERROR: Command buffer ran out > {}! Do you possibly have infinite recursion? E.g. a script command that runs itself...", LIMIT);
+                break;
+            }
+
             let arg = ctx.pop_arg();
             match arg {
                 Some(arg) => {
@@ -174,9 +214,12 @@ where
                     match cmd {
                         Some(cmd) => {
                             // Run the command!
+                            if verbose {
+                                println!("[v] Exec command {}", &arg);
+                            }
                             let res = cmd.execute(&mut ctx);
                             if let Err(err) = res {
-                                results.errors.push(err);
+                                results.errors.push(format!("Command number {} \"{}\" errored in room {} ({}): {}", i, &arg, &id, &room_name, &err));
                             } else {
                                 modified = true;
                                 results.modified = true;
@@ -195,12 +238,15 @@ where
         }
 
         // Rename the corresponding room.
-        for stem in &mut world.stems {
+        for stem in &mut ctx.env.world.stems {
             match &mut stem.content {
-                LOStemContent::TileMapEdit { name, revision, .. } => {
-                    *name = room_name.clone().into();
-                    if modified && increment_room_revision {
-                        *revision = *revision + 1;
+                LOStemContent::TileMapEdit { id, name, revision, .. } => {
+                    if *id == ctx.room_id {
+                        *name = ctx.override_room_name.unwrap_or_else(|| room_name.clone()).into();
+                        if modified && increment_room_revision {
+                            *revision = *revision + 1;
+                        }
+                        break;
                     }
                 },
                 _ => {},

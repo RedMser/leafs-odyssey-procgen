@@ -8,3 +8,4 @@ default-run = "leafs-odyssey-manipulator"
 leafs-odyssey-data = { path = "../leafs-odyssey-data/" }
 binrw = "0.14.1"
 clap = { version = "4.5.41", features = ["derive"] }
+logos = "0.15.0"

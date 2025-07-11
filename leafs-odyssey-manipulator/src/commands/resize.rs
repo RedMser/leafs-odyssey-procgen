@@ -19,11 +19,14 @@ impl RoomCommand for ResizeCommand {
         room_info.height = new_height;
 
         // Update size of room (keep layer size same, since there's little benefit to not have it be 24x16)
-        for stem in &mut context.world.stems {
+        for stem in &mut context.env.world.stems {
             match &mut stem.content {
-                LOStemContent::TileMapEdit { width, height, .. } => {
-                    *width = new_width;
-                    *height = new_height;
+                LOStemContent::TileMapEdit { id, width, height, .. } => {
+                    if *id == context.room_id {
+                        *width = new_width;
+                        *height = new_height;
+                        break;
+                    }
                 },
                 _ => {},
             }

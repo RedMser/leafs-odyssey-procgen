@@ -19,5 +19,10 @@ macro_rules! room_commands {
 
 room_commands! {
     position::PositionCommand,
+    rect::RectCommand,
+    rename::RenameCommand,
+    replace::ReplaceCommand,
     resize::ResizeCommand,
+    script::ScriptCommand,
+    tile::TileCommand,
 }

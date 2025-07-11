@@ -318,7 +318,7 @@ pub enum LOMusic {
 
 #[binrw]
 #[brw(little, repr = u32)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LODirection {
     Up = 0,
     Right = 1,
@@ -326,9 +326,15 @@ pub enum LODirection {
     Left = 3,
 }
 
+impl Default for LODirection {
+    fn default() -> Self {
+        LODirection::Down
+    }
+}
+
 #[binrw]
 #[brw(little)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, strum::EnumString)]
 pub enum LOTile {
     // Seems to be treated the same as magic 0x01, 0x04, 0x07, 0x63 (and possibly every invalid value above that?)
     #[brw(magic = 0x00u32)]
@@ -754,9 +760,27 @@ impl LOTile {
     }
 }
 
+impl PartialEq for LOTile {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::PressurePlate { connections: l_connections }, Self::PressurePlate { connections: r_connections }) => l_connections == r_connections,
+            (Self::SacrificeAltar { connections: l_connections }, Self::SacrificeAltar { connections: r_connections }) => l_connections == r_connections,
+            (Self::StartPoint { direction: l_direction }, Self::StartPoint { direction: r_direction }) => l_direction == r_direction,
+            (Self::Sign { text: l_text }, Self::Sign { text: r_text }) => l_text == r_text,
+            (Self::Stack { tiles: l_tiles }, Self::Stack { tiles: r_tiles }) => l_tiles == r_tiles,
+            (Self::ToggleSwitch { connections: l_connections }, Self::ToggleSwitch { connections: r_connections }) => l_connections == r_connections,
+            (Self::BombBug { direction: l_direction }, Self::BombBug { direction: r_direction }) => l_direction == r_direction,
+            (Self::Slug { direction: l_direction }, Self::Slug { direction: r_direction }) => l_direction == r_direction,
+            (Self::FlyingSnake { direction: l_direction }, Self::FlyingSnake { direction: r_direction }) => l_direction == r_direction,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+impl Eq for LOTile {}
+
 #[binrw]
 #[brw(little)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LOConnection {
     pub x_position: u16,
     pub y_position: u16,
@@ -776,9 +800,16 @@ pub struct LOStackElement {
     pub connections: Vec<LOConnection>,
 }
 
+impl PartialEq for LOStackElement {
+    fn eq(&self, other: &Self) -> bool {
+        self.tile == other.tile && self.direction == other.direction && self.connections == other.connections
+    }
+}
+impl Eq for LOStackElement {}
+
 #[binrw]
 #[brw(little, repr = u16)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LOStackDirection {
     Up = 0,
     Right = 1,
@@ -786,9 +817,15 @@ pub enum LOStackDirection {
     Left = 3,
 }
 
+impl Default for LOStackDirection {
+    fn default() -> Self {
+        LOStackDirection::Down
+    }
+}
+
 #[binrw]
 #[brw(little)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, strum::EnumString, PartialEq, Eq)]
 pub enum LOStackTile {
     #[brw(magic = 0x00u16)]
     None,

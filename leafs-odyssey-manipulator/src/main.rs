@@ -1,5 +1,7 @@
 mod commands;
 mod room_title_commands;
+mod tile_parser;
+mod utils;
 
 use binrw::BinRead;
 use clap::Parser;
@@ -40,6 +42,12 @@ struct Args {
     /// Don't actually write the output file.
     #[arg(long, action)]
     pub dryrun: bool,
+    /// Verbose output (e.g. details on command parsing).
+    #[arg(short, long, action)]
+    pub verbose: bool,
+    /// Dumps the room's layer data with the given ID.
+    #[arg(short, long, action)]
+    pub dump_room: Option<u32>,
 }
 
 fn world_name_to_path(name: &str) -> Result<PathBuf, Box<dyn Error>> {
@@ -55,7 +63,7 @@ fn world_name_to_path(name: &str) -> Result<PathBuf, Box<dyn Error>> {
     })
 }
 
-fn dump_world(world: &LOWorld) {
+fn dump_world(world: &LOWorld, dump_room_id: Option<u32>) {
     let mut room_id_to_geometry = HashMap::new();
 
     // Pass 1: Search for world info + store room coords map
@@ -123,6 +131,24 @@ fn dump_world(world: &LOWorld) {
                     println!("    (All layers are sized 24x16)");
                 }
                 println!("");
+
+                if let Some(dump_room_id) = dump_room_id {
+                    if *id == dump_room_id {
+                        for (i, layer) in layers.iter().enumerate() {
+                            println!("  Contents of Layer {i}:");
+                            
+                            for y in 0..layer.height {
+                                let mut row = vec![];
+                                for x in 0..layer.width {
+                                    let j = x + y * layer.width;
+                                    let tile = &layer.tiles[j as usize];
+                                    row.push(format!("{:?}", &tile));
+                                }
+                                println!("{}", row.join(" "));
+                            }
+                        }
+                    }
+                }
             },
             _ => {},
         }
@@ -148,11 +174,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut world = LOWorld::read(&mut fa)?;
 
     if args.dump && !args.dump_after {
-        dump_world(&world);
+        dump_world(&world, args.dump_room);
     }
 
     println!("Applying modifications...");
-    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision);
+    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision, args.verbose);
+
+    for error in results.errors {
+        println!("ERROR: {}", error);
+    }
 
     if !results.modified {
         println!("No room with commands was found! Check README for more info.");
@@ -177,7 +207,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if args.dump_after {
-        dump_world(&world);
+        dump_world(&world, args.dump_room);
     }
 
     if !args.dryrun {

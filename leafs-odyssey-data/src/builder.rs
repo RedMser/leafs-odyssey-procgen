@@ -157,6 +157,51 @@ impl Tilemap {
         self.select_value(false)
     }
 
+    pub fn select_if_all_layers_equal(&self, predicate: &Vec<LOTile>) -> TileSelection {
+        let mut selection = self.select();
+
+        if predicate.len() == self.layers.len() {
+            for i in 0..self.layers.len() {
+                let layer = &self.layers[i];
+                let pred = &predicate[i];
+                for (y, x) in layer.indices_row_major() {
+                    let tile = layer.get(y, x).unwrap();
+                    if *tile == *pred {
+                        selection = selection.add(x, y);
+                    }
+                }
+            }
+        }
+
+        selection
+    }
+
+    pub fn select_if_all_exist(&self, predicate: &Vec<LOTile>) -> TileSelection {
+        let mut selection = self.select();
+        let mut count = Array2D::filled_with(0, self.get_height() as usize, self.get_width() as usize);
+
+        // TODO: this currently checks if *any* exist... predicate needs to keep track of which elements have already been tried on each coordinate...
+        // should rethink the logic of this from scratch, it seems overcomplicated :)
+        for layer in self.layers.iter() {
+            for (y, x) in layer.indices_row_major() {
+                let tile = layer.get(y, x).unwrap();
+                for pred in predicate {
+                    if tile == pred {
+                        let new_count = count.get(y, x).unwrap() + 1;
+                        if new_count >= predicate.len() {
+                            selection = selection.add(x, y);
+                        } else {
+                            count.set(y, x, new_count).unwrap();
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        selection
+    }
+
     pub fn write_on_layer(&mut self, layer: usize, tile: &LOTile, selection: &TileSelection) {
         let layer = self.get_layer_mut(layer);
 
@@ -253,6 +298,14 @@ impl Tilemap {
             height: layer.num_rows() as u16,
             tiles: layer.as_row_major(),
         }
+    }
+}
+
+impl From<&mut Vec<LOLayer>> for Tilemap {
+    fn from(layers: &mut Vec<LOLayer>) -> Self {
+        Self { layers: layers.iter().map(|layer| {
+            Array2D::from_row_major(&layer.tiles, layer.height as usize, layer.width as usize).expect("Layer size mismatched the tile count!")
+        }).collect() }
     }
 }
 
@@ -385,7 +438,7 @@ impl TileSelection {
     pub fn predicate_or<F>(self, predicate: F) -> Self
         where F: Fn(usize, usize) -> bool {
         self.predicate(|(x, y), value| {
-            if value { return true;}
+            if value { return true; }
             predicate(x, y)
         })
     }
