@@ -37,16 +37,13 @@ Following commands are supported:
 - `tile X Y T` - places tile T at the given coordinate. Syntax details on T are below.
 - `rect X1 Y1 X2 Y2 T` - places tile T within the given rectangle area. Syntax details on T are below.
 - `replace C T` - finds all tiles that match the condition C, then runs the tile command on them with T. It's not really a true find-and-replace, but just a complex way to specify coordinates. Syntax details on C and T are below.
+- `addlayer N T` - adds N amount of new 24x16 sized tilemap layers, each filled with T, to the end of the room's tilemap list. There's a limit of 64 tilemap layers per room. Syntax details on T are below (multiple tiles are not supported).
+- `removelayer I` - removes the tilemap layer at 0-based index I.
+- `sizelayer I W H` - resizes tilemap layer at 0-based index I to the given size.
+- `copylayer I J` - copies the contents of tilemap layer I to J (both are 0-based indices).
+- `movelayer I J` - moves the tilemap layer from I to J (both are 0-based indices).
 - `rename N` - rename the room to N. While the room title (anything before --) is used, there's a 64 characters limit. You can use scripts to circumvent the length limit of room name + commands.
 - `script S` - runs commands from the script file named S. It's a path relative to the current working directory. If no file extension is specified, it defaults to `.cfg`. You can use new lines synonymously to spaces in script files!
-
-<!--
-TODO: docs for not yet implemented commands:
-
-- `addlayer N T` - adds N amount of new tilemap layers, each filled with T, to the end of the room's tilemap list. There's a limit of 64 tilemap layers per room. Syntax details on T are below.
-- `removelayer I` - removes the tilemap layer at index I.
-- `layersize I W H` - resizes tilemap layer I to the given size.
--->
 
 Arguments of commands may only include spaces if you surround them with "quotes". You can escape literal quotes using a backslash.
 Commands are executed in reading order, so the first command runs first.

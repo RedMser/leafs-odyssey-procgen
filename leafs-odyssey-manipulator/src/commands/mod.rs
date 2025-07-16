@@ -25,4 +25,9 @@ room_commands! {
     resize::ResizeCommand,
     script::ScriptCommand,
     tile::TileCommand,
+    layer_add::LayerAddCommand,
+    layer_remove::LayerRemoveCommand,
+    layer_size::LayerSizeCommand,
+    layer_copy::LayerCopyCommand,
+    layer_move::LayerMoveCommand,
 }
