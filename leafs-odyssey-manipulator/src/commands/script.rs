@@ -8,7 +8,7 @@ pub struct ScriptCommand;
 
 impl ScriptCommand {
     fn remove_comments(script: &str) -> String {
-        let regex = Regex::new("/*.+?*/").unwrap();
+        let regex = Regex::new(r"(?s)/\*.+?\*/").unwrap();
         regex.replace_all(script, "").into_owned()
     }
 }

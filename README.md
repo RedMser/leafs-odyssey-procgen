@@ -59,7 +59,12 @@ A plus `+` means you go up a layer.
 Parentheses `( )` define a stack (max height is 16).
 Multiplication like `T*n` can be used to substitute `T+T+T+...` n-times.
 
-Currently, "complex" tiles are not supported. Monsters always face down, wiring is not connected, and signs have no text.
+Complex tiles can be parametrized with colon, such as:
+
+- `BombBug:Left` and other monsters facing direction. Monsters default to facing down.
+- `PressurePlate:1,2:3,4` and other wiring elements (list of connection targets).
+
+Signs are currently not supported and always show up blank. Complex syntax is not supported in item stacks.
 
 When writing tiles, there are two modes:
 

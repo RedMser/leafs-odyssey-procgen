@@ -6,12 +6,12 @@ mod utils;
 use binrw::BinRead;
 use clap::Parser;
 use regex::Regex;
-use std::{collections::HashMap, error::Error, fs, path::{Path, PathBuf}};
+use std::{collections::HashMap, error::Error, fs, path::{Path, PathBuf}, thread, time::Duration};
 
 use leafs_odyssey_data::{data::*, io::get_worlds_folder};
 use room_title_commands::apply_world_commands;
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 struct Args {
     /// File name or path of world to load.
     pub input_world_name: String,
@@ -35,7 +35,7 @@ struct Args {
     #[arg(long, action)]
     pub keep_room_revision: bool,
     /// Print unaltered world and room metadata.
-    #[arg(long, action)]
+    #[arg(short, long, action)]
     pub dump: bool,
     /// Print altered world and room metadata.
     #[arg(long, action)]
@@ -47,11 +47,14 @@ struct Args {
     #[arg(short, long, action)]
     pub verbose: bool,
     /// Dumps the room's layer data with the given ID.
-    #[arg(short, long, action)]
+    #[arg(long, action)]
     pub dump_room: Option<u32>,
     /// Files in the working directory named e.g. myworld_1_2_3.cfg (uses input filename) will automatically be loaded for the room at coordinate (1,2,3) at the end.
     #[arg(short, long, action)]
     pub auto_script: bool,
+    /// Keep running in background, automatically re-running the program periodically.
+    #[arg(short = 'D', long, action)]
+    pub daemon: bool,
 }
 
 fn world_name_to_path(name: &str) -> Result<PathBuf, Box<dyn Error>> {
@@ -184,6 +187,25 @@ fn populate_autoscript_cache(world_name: &str, autoscript_cache: &mut HashMap<Ro
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
+    if args.daemon {
+        loop {
+            let res = do_work(args.clone());
+
+            if let Err(err) = res {
+                println!("ERROR (will retry shortly): {}", err);
+            }
+
+            if args.verbose {
+                println!("Daemon mode, re-executing shortly...");
+            }
+            thread::sleep(Duration::from_secs(5));
+        }
+    }
+
+    do_work(args)
+}
+
+fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
     let input_name = args.input_world_name;
     let output_name = args.output_world_name.unwrap_or_else(|| String::from("generated_") + &input_name);
 

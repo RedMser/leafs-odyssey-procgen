@@ -318,7 +318,7 @@ pub enum LOMusic {
 
 #[binrw]
 #[brw(little, repr = u32)]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, strum::EnumString)]
 pub enum LODirection {
     Up = 0,
     Right = 1,
