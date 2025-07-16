@@ -188,6 +188,14 @@ where
                 _ => {},
             }
         }
+
+        if !autoscript_cache.is_empty() {
+            let size = autoscript_cache.len();
+            let contents = autoscript_cache.into_values()
+                .collect::<Vec<_>>()
+                .join(", ");
+            println!("Following {} autoscript configs were found, but without corresponding rooms: {}", size, contents);
+        }
     }
 
     // Pass 1: collect command args immutably + stem contents
