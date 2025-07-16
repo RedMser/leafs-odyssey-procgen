@@ -199,6 +199,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     if args.auto_script {
         let input_name = Path::new(&input_path).file_stem().unwrap().to_string_lossy();
         populate_autoscript_cache(&input_name, &mut autoscript_cache);
+        if args.verbose {
+            println!("Found {} autoscript file(s).", &autoscript_cache.len());
+        }
     }
 
     println!("Reading world \"{:?}\"...", input_path);
