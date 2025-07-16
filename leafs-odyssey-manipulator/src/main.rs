@@ -207,9 +207,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
     let input_name = args.input_world_name;
-    let output_name = args.output_world_name.unwrap_or_else(|| String::from("generated_") + &input_name);
-
     let input_path = world_name_to_path(&input_name)?;
+
+    let output_name = args.output_world_name.unwrap_or_else(|| {
+        let mut output_path = input_path.clone();
+        output_path.set_file_name(String::from("generated_") + &input_path.file_name().unwrap().to_string_lossy());
+        output_path.to_string_lossy().to_string()
+    });
     let output_path = world_name_to_path(&output_name)?;
 
     if input_path == output_path {
