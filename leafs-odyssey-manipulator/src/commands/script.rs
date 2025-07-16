@@ -1,8 +1,17 @@
 use std::{fs, path::PathBuf};
 
+use regex::Regex;
+
 use crate::room_title_commands::{parse_args_only, RoomCommand, RoomCommandContext};
 
 pub struct ScriptCommand;
+
+impl ScriptCommand {
+    fn remove_comments(script: &str) -> String {
+        let regex = Regex::new("/*.+?*/").unwrap();
+        regex.replace_all(script, "").into_owned()
+    }
+}
 
 impl RoomCommand for ScriptCommand {
     fn names(&self) -> &'static [&'static str] {
@@ -23,6 +32,7 @@ impl RoomCommand for ScriptCommand {
             println!("Reading script file \"{:?}\"...", file_path);
 
             let script = fs::read_to_string(&file_path).map_err(|_| "Failed to read script file.")?;
+            let script = Self::remove_comments(&script);
             context.env.script_cache.insert(file_path, script.clone());
             script
         };

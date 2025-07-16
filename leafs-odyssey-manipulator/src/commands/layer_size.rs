@@ -21,6 +21,9 @@ impl RoomCommand for LayerSizeCommand {
                         let layer = &mut layers[index];
                         layer.width = new_width;
                         layer.height = new_height;
+                        
+                        let new_tile_count = layer.width * layer.height;
+                        layer.tiles.resize(new_tile_count as usize, LOTile::None);
                         break;
                     }
                 },

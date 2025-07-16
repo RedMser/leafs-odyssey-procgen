@@ -49,7 +49,7 @@ struct Args {
     /// Dumps the room's layer data with the given ID.
     #[arg(short, long, action)]
     pub dump_room: Option<u32>,
-    /// Files in the working directory named e.g. myworld_1_2_3.cfg (uses input filename) will automatically be loaded for the room at coordinate (1,2,3).
+    /// Files in the working directory named e.g. myworld_1_2_3.cfg (uses input filename) will automatically be loaded for the room at coordinate (1,2,3) at the end.
     #[arg(short, long, action)]
     pub auto_script: bool,
 }

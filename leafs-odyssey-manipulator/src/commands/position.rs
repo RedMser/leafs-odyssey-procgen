@@ -13,9 +13,9 @@ impl RoomCommand for PositionCommand {
         let new_z = context.pop_arg().ok_or("Z position is missing.")?.parse::<i16>().map_err(|_| "Z position is not an integer.")?;
 
         let room_info = context.get_room_info_mut();
-        room_info.x_position = new_x;
-        room_info.y_position = new_y;
-        room_info.z_position = new_z;
+        room_info.x_position += new_x;
+        room_info.y_position += new_y;
+        room_info.z_position += new_z;
 
         Ok(())
     }

@@ -6,7 +6,7 @@ pub struct TileCommand;
 
 impl RoomCommand for TileCommand {
     fn names(&self) -> &'static [&'static str] {
-        &["tile"]
+        &["tile", "tiles"]
     }
 
     fn execute(&self, context: &mut RoomCommandContext) -> Result<(), String> {

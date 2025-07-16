@@ -6,7 +6,10 @@ pub struct LayerAddCommand;
 
 impl RoomCommand for LayerAddCommand {
     fn names(&self) -> &'static [&'static str] {
-        &["addlayer", "newlayer"]
+        &[
+            "addlayer", "newlayer",
+            "addlayers", "newlayers",
+        ]
     }
 
     fn execute(&self, context: &mut RoomCommandContext) -> Result<(), String> {

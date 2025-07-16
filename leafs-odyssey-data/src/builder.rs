@@ -304,7 +304,8 @@ impl Tilemap {
 impl From<&mut Vec<LOLayer>> for Tilemap {
     fn from(layers: &mut Vec<LOLayer>) -> Self {
         Self { layers: layers.iter().map(|layer| {
-            Array2D::from_row_major(&layer.tiles, layer.height as usize, layer.width as usize).expect("Layer size mismatched the tile count!")
+            Array2D::from_row_major(&layer.tiles, layer.height as usize, layer.width as usize)
+                .expect(&format!("Layer size {}x{} mismatched the tile count {} (expected {})!", layer.width, layer.height, layer.tiles.len(), layer.width * layer.height))
         }).collect() }
     }
 }
