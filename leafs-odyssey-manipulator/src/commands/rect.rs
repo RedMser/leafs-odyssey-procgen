@@ -22,7 +22,7 @@ impl RoomCommand for RectCommand {
             match &mut stem.content {
                 LOStemContent::TileMapEdit { id, layers, .. } => {
                     if *id == context.room_id {
-                        write_tiles(tiles, layers, |tilemap| tilemap.select().add_rect(x1, y1, x1.abs_diff(x2), y1.abs_diff(y2)))?;
+                        write_tiles(tiles, layers, |tilemap| tilemap.select().add_rect(x1-1, y1-1, x1.abs_diff(x2)-1, y1.abs_diff(y2)-1))?;
                         break;
                     }
                 },

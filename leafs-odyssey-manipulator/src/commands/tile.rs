@@ -20,7 +20,7 @@ impl RoomCommand for TileCommand {
             match &mut stem.content {
                 LOStemContent::TileMapEdit { id, layers, .. } => {
                     if *id == context.room_id {
-                        write_tiles(tiles, layers, |tilemap| tilemap.select().add(x, y))?;
+                        write_tiles(tiles, layers, |tilemap| tilemap.select().add(x-1, y-1))?;
                         break;
                     }
                 },
