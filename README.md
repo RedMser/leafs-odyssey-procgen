@@ -64,7 +64,7 @@ Complex tiles can be parametrized with colon, such as:
 - `BombBug:Left` and other monsters facing direction. Monsters default to facing down.
 - `PressurePlate:1,2:3,4` and other wiring elements (list of connection targets).
 
-Signs are currently not supported and always show up blank. Complex syntax is not supported in item stacks.
+Sign text is currently not customizable and always shows up blank.
 
 When writing tiles, there are two modes:
 

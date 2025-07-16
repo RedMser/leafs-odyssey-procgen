@@ -59,25 +59,8 @@ impl From<&Item> for LOTile {
             },
             Item::Stack(stack) => {
                 LOTile::Stack {
-                    tiles: stack.iter().map(|i| LOStackElement {
-                        direction: LOStackDirection::default(),
-                        connections: vec![],
-                        tile: i.into(),
-                    }).collect()
+                    tiles: stack.iter().map(|i| LOTile::from(i).into()).collect()
                 }
-            },
-        }
-    }
-}
-
-impl From<&Item> for LOStackTile {
-    fn from(item: &Item) -> Self {
-        match item {
-            Item::Tile(tile) => {
-                LOStackTile::from_str(&tile).unwrap_or(LOStackTile::None)
-            },
-            Item::Stack(_) => {
-                LOStackTile::None
             },
         }
     }

@@ -332,6 +332,17 @@ impl Default for LODirection {
     }
 }
 
+impl From<LOStackDirection> for LODirection {
+    fn from(value: LOStackDirection) -> Self {
+        match value {
+            LOStackDirection::Up => LODirection::Up,
+            LOStackDirection::Right => LODirection::Right,
+            LOStackDirection::Down => LODirection::Down,
+            LOStackDirection::Left => LODirection::Left,
+        }
+    }
+}
+
 #[binrw]
 #[brw(little)]
 #[derive(Clone, Debug, strum::EnumString)]
@@ -807,6 +818,47 @@ impl PartialEq for LOStackElement {
 }
 impl Eq for LOStackElement {}
 
+impl From<LOTile> for LOStackElement {
+    fn from(tile: LOTile) -> Self {
+        let direction = match &tile {
+            LOTile::StartPoint { direction } |
+            LOTile::BombBug { direction } |
+            LOTile::FlyingSnake { direction } |
+            LOTile::Slug { direction } => {
+                LOStackDirection::from(direction.clone())
+            },
+            _ => Default::default(),
+        };
+        let connections = match &tile {
+            LOTile::ToggleSwitch { connections } |
+            LOTile::SacrificeAltar { connections } |
+            LOTile::PressurePlate { connections } => {
+                connections.clone()
+            }
+            _ => Default::default(),
+        };
+        let tile = match &tile {
+            LOTile::PrimeKey => LOStackTile::PrimeKey,
+            LOTile::TerraKey => LOStackTile::TerraKey,
+            LOTile::SkyKey => LOStackTile::SkyKey,
+            LOTile::InfernalKey => LOStackTile::InfernalKey,
+            LOTile::StarKey => LOStackTile::StarKey,
+            LOTile::PushBlock => LOStackTile::PushBlock,
+            LOTile::MultiPushBlock => LOStackTile::MultiPushBlock,
+            LOTile::MonsterBlock => LOStackTile::MonsterBlock,
+            LOTile::StatueRubble => LOStackTile::StatueRubble,
+            LOTile::ToggleSwitch { .. } => LOStackTile::ToggleSwitch,
+            LOTile::AngryEye => LOStackTile::AngryEye,
+            LOTile::BombBug { .. } => LOStackTile::BombBug,
+            LOTile::Statue => LOStackTile::Statue,
+            LOTile::Slug { .. } => LOStackTile::Slug,
+            LOTile::FlyingSnake { .. } => LOStackTile::FlyingSnake,
+            _ => LOStackTile::None,
+        };
+        LOStackElement { tile, direction, connections }
+    }
+}
+
 #[binrw]
 #[brw(little, repr = u16)]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -820,6 +872,17 @@ pub enum LOStackDirection {
 impl Default for LOStackDirection {
     fn default() -> Self {
         LOStackDirection::Down
+    }
+}
+
+impl From<LODirection> for LOStackDirection {
+    fn from(value: LODirection) -> Self {
+        match value {
+            LODirection::Up => LOStackDirection::Up,
+            LODirection::Right => LOStackDirection::Right,
+            LODirection::Down => LOStackDirection::Down,
+            LODirection::Left => LOStackDirection::Left,
+        }
     }
 }
 
