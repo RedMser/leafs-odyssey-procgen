@@ -157,7 +157,7 @@ pub fn parse_args_only(room_args: &str) -> Vec<String> {
     tokens
 }
 
-pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool, verbose: bool) -> WorldCommandsResult
+pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool, verbose: bool, mut autoscript_cache: HashMap::<RoomCoordinates, String>) -> WorldCommandsResult
 where
     C: IntoIterator<Item = Rc<dyn RoomCommand>>,
 {
@@ -168,18 +168,45 @@ where
         .flat_map(|cmd| cmd.names().iter().map(move |name| (name, cmd.clone())))
         .collect::<HashMap<_, _>>();
 
+    // Pre-pass for autoscript: find out which room ids have which coordinates
+    let mut room_id_to_autoscript = HashMap::<u32, String>::new();
+    if !autoscript_cache.is_empty() {
+        for stem in &world.stems {
+            match &stem.content {
+                LOStemContent::TileZoneMap { room_info, .. } => {
+                    for room in room_info {
+                        let coords = RoomCoordinates(room.x_position, room.y_position, room.z_position);
+                        if let Some(autoscript) = autoscript_cache.remove(&coords) {
+                            if verbose {
+                                println!("Room ID {} at coords {:?} loaded autoscript {}", &room.id, &coords, &autoscript);
+                            }
+                            room_id_to_autoscript.insert(room.id, autoscript);
+                        }
+                    }
+                    break;
+                },
+                _ => {},
+            }
+        }
+    }
+
     // Pass 1: collect command args immutably + stem contents
     for stem in &world.stems {
         match &stem.content {
             LOStemContent::TileMapEdit { id, name, .. } => {
                 let (room_name, mut args) = parse_args(&name.to_string());
-                if args.is_empty() {
-                    continue;
+
+                // Insert autoscript
+                if let Some(autoscript) = room_id_to_autoscript.remove(&id) {
+                    args.push("script".into());
+                    args.push(autoscript);
                 }
 
-                // We're using Vec::pop(), so args pop from end to start.
-                args.reverse();
-                room_args_map.insert(*id, (room_name, args));
+                if !args.is_empty() {
+                    // We're using Vec::pop(), so args pop from end to start.
+                    args.reverse();
+                    room_args_map.insert(*id, (room_name, args));
+                }
             },
             _ => {},
         }

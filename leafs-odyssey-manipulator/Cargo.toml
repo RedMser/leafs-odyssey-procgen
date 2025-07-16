@@ -9,3 +9,4 @@ leafs-odyssey-data = { path = "../leafs-odyssey-data/" }
 binrw = "0.14.1"
 clap = { version = "4.5.41", features = ["derive"] }
 logos = "0.15.0"
+regex = "1.11.1"

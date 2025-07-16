@@ -5,7 +5,8 @@ mod utils;
 
 use binrw::BinRead;
 use clap::Parser;
-use std::{collections::HashMap, error::Error, path::PathBuf};
+use regex::Regex;
+use std::{collections::HashMap, error::Error, fs, path::{Path, PathBuf}};
 
 use leafs_odyssey_data::{data::*, io::get_worlds_folder};
 use room_title_commands::apply_world_commands;
@@ -48,6 +49,9 @@ struct Args {
     /// Dumps the room's layer data with the given ID.
     #[arg(short, long, action)]
     pub dump_room: Option<u32>,
+    /// Files in the working directory named e.g. myworld_1_2_3.cfg (uses input filename) will automatically be loaded for the room at coordinate (1,2,3).
+    #[arg(short, long, action)]
+    pub auto_script: bool,
 }
 
 fn world_name_to_path(name: &str) -> Result<PathBuf, Box<dyn Error>> {
@@ -155,6 +159,28 @@ fn dump_world(world: &LOWorld, dump_room_id: Option<u32>) {
     }
 }
 
+fn populate_autoscript_cache(world_name: &str, autoscript_cache: &mut HashMap<RoomCoordinates, String>) {
+    let regex = Regex::new(&format!(r"^{}_(-?\d+)_(-?\d+)_(-?\d+).cfg$", regex::escape(world_name))).unwrap();
+    for entry in fs::read_dir("./").unwrap() {
+        if let Ok(entry) = entry {
+            if let Ok(file_type) = entry.file_type() {
+                if !file_type.is_file() { continue; }
+
+                let file_name = entry.file_name();
+                let file_name = file_name.to_string_lossy();
+                if let Some(matches) = regex.captures(&file_name) {
+                    let x_position = matches.get(1).unwrap().as_str().parse().unwrap();
+                    let y_position = matches.get(2).unwrap().as_str().parse().unwrap();
+                    let z_position = matches.get(3).unwrap().as_str().parse().unwrap();
+                    let coordinates = RoomCoordinates(x_position, y_position, z_position);
+
+                    autoscript_cache.insert(coordinates, file_name.into_owned());
+                }
+            }
+        }
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
@@ -168,7 +194,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("Input and output path may not be the same, to avoid accidential data loss!");
         return Ok(());
     }
-    
+
+    let mut autoscript_cache = HashMap::<RoomCoordinates, String>::new();
+    if args.auto_script {
+        let input_name = Path::new(&input_path).file_stem().unwrap().to_string_lossy();
+        populate_autoscript_cache(&input_name, &mut autoscript_cache);
+    }
+
     println!("Reading world \"{:?}\"...", input_path);
     let mut fa = std::fs::File::open(input_path)?;
     let mut world = LOWorld::read(&mut fa)?;
@@ -178,7 +210,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     println!("Applying modifications...");
-    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision, args.verbose);
+    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision, args.verbose, autoscript_cache);
 
     for error in results.errors {
         println!("ERROR: {}", error);

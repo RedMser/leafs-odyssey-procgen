@@ -1084,6 +1084,9 @@ pub struct LORoomInfo {
     _unknown1: u16,
 }
 
+#[derive(Hash, PartialEq, Eq, Debug)]
+pub struct RoomCoordinates(pub i16, pub i16, pub i16);
+
 pub fn random_guid(segments: usize) -> String {
     (0..segments)
         .map(|_| random_guid_segment())
