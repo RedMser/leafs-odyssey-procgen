@@ -47,10 +47,10 @@ impl From<&Item> for LOTile {
                             while let Some(part) = parts.next() {
                                 let (x, y) = part.split_once(',').expect("Invalid connection target string.");
                                 let (x, y) = (
-                                    x.parse().expect("Connection target X position is not an integer."),
-                                    y.parse().expect("Connection target Y position is not an integer."),
+                                    x.parse::<u16>().expect("Connection target X position is not an integer."),
+                                    y.parse::<u16>().expect("Connection target Y position is not an integer."),
                                 );
-                                connections.push(LOConnection { x_position: x, y_position: y });
+                                connections.push(LOConnection { x_position: x-1, y_position: y-1 });
                             }
                         }
                         _ => {},
