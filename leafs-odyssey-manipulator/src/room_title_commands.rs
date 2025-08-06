@@ -18,6 +18,7 @@ pub struct RoomCommandContext<'w> {
     pub room_id: u32,
     pub override_room_name: Option<String>,
     pub env: &'w mut WorldCommandContext<'w>,
+    pub sign_text: HashMap<String, String>,
 }
 
 impl<'w> RoomCommandContext<'w> {
@@ -27,6 +28,7 @@ impl<'w> RoomCommandContext<'w> {
             room_id,
             override_room_name: None,
             env: world,
+            sign_text: Default::default(),
         }
     }
 

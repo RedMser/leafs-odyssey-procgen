@@ -42,6 +42,7 @@ Following commands are supported:
 - `sizelayer I W H` - resizes tilemap layer at 0-based index I to the given size.
 - `copylayer I J` - copies the contents of tilemap layer I to J (both are 0-based indices).
 - `movelayer I J` - moves the tilemap layer from I to J (both are 0-based indices).
+- `sign I C` - assign a unique identifier I with the corresponding string contents C. When placing a sign, refer to this ID to write the given contents to the sign. Stored per room, and must be assigned before creating the sign. Use quotes around text contents to allow whitespace.
 - `rename N` - rename the room to N. While the room title (anything before --) is used, there's a 64 characters limit. You can use scripts to circumvent the length limit of room name + commands.
 - `script S` - runs commands from the script file named S. It's a path relative to the current working directory. If no file extension is specified, it defaults to `.cfg`. You can use new lines synonymously to spaces in script files!
 
@@ -63,8 +64,7 @@ Complex tiles can be parametrized with colon, such as:
 
 - `BombBug:Left` and other monsters facing direction. Monsters default to facing down.
 - `PressurePlate:1,2:3,4` and other wiring elements (list of connection targets).
-
-Sign text is currently not customizable and always shows up blank.
+- `Sign:id` together with the `sign` command above.
 
 When writing tiles, there are two modes:
 

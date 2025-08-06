@@ -1,6 +1,6 @@
 use leafs_odyssey_data::data::*;
 
-use crate::{room_title_commands::{RoomCommand, RoomCommandContext}, tile_parser::parse_string_to_items};
+use crate::{room_title_commands::{RoomCommand, RoomCommandContext}, tile_parser::{items_to_tiles, parse_string_to_items}};
 
 pub struct LayerAddCommand;
 
@@ -22,7 +22,8 @@ impl RoomCommand for LayerAddCommand {
         if tiles.len() != 1 {
             return Err(format!("Expected a single tile, but got {}", tiles.len()));
         }
-        let tiles = tiles.into_iter().map(|item| LOTile::from(&item)).next().unwrap();
+        let tiles = items_to_tiles(tiles, &context.sign_text);
+        let tiles = &tiles[0];
 
         for stem in &mut context.env.world.stems {
             match &mut stem.content {

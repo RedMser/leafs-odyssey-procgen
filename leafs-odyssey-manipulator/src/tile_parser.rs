@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use leafs_odyssey_data::data::*;
 use logos::{Lexer, Logos};
@@ -38,6 +38,9 @@ impl From<&Item> for LOTile {
                         LOTile::Slug { ref mut direction } => {
                             *direction = LODirection::from_str(parts.next().unwrap()).expect("Invalid direction string.");
                         },
+                        LOTile::Sign { ref mut text } => {
+                            *text = binrw::NullString::from(parts.next().unwrap());
+                        }
                         LOTile::ToggleSwitch { ref mut connections } |
                         LOTile::SacrificeAltar { ref mut connections } |
                         LOTile::PressurePlate { ref mut connections } => {
@@ -79,6 +82,24 @@ pub fn parse_string_to_items(input: &str) -> Result<Vec<Item>, String> {
     }
 
     Ok(items)
+}
+
+pub fn items_to_tiles(items: Vec<Item>, sign_text: &HashMap<String, String>) -> Vec<LOTile> {
+    items
+        .into_iter()
+        .map(|item| {
+            let mut tile = LOTile::from(&item);
+
+            if let LOTile::Sign { ref mut text } = tile {
+                let sign_id = text.to_string();
+                if let Some(new_text) = sign_text.get(&sign_id) {
+                    *text = binrw::NullString::from(new_text.clone());
+                }
+            }
+
+            tile
+        })
+        .collect::<Vec<_>>()
 }
 
 fn parse(lexer: &mut Lexer<Token>, in_stack: bool) -> Result<Vec<Item>, String> {

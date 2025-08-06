@@ -1,6 +1,6 @@
 use leafs_odyssey_data::data::*;
 
-use crate::{room_title_commands::{RoomCommand, RoomCommandContext}, tile_parser::parse_string_to_items, utils::{conditional_tile_selection, write_tiles}};
+use crate::{room_title_commands::{RoomCommand, RoomCommandContext}, tile_parser::{items_to_tiles, parse_string_to_items}, utils::{conditional_tile_selection, write_tiles}};
 
 pub struct ReplaceCommand;
 
@@ -16,7 +16,7 @@ impl RoomCommand for ReplaceCommand {
         let predicate = predicate.into_iter().map(|item| LOTile::from(&item)).collect::<Vec<_>>();
         let tiles = context.pop_arg().ok_or("Tile is missing.")?;
         let tiles = parse_string_to_items(&tiles)?;
-        let tiles = tiles.into_iter().map(|item| LOTile::from(&item)).collect::<Vec<_>>();
+        let tiles = items_to_tiles(tiles, &context.sign_text);
 
         for stem in &mut context.env.world.stems {
             match &mut stem.content {

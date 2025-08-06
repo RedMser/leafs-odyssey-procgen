@@ -1,6 +1,6 @@
 use leafs_odyssey_data::data::*;
 
-use crate::{room_title_commands::{RoomCommand, RoomCommandContext}, tile_parser::parse_string_to_items, utils::write_tiles};
+use crate::{room_title_commands::{RoomCommand, RoomCommandContext}, tile_parser::{items_to_tiles, parse_string_to_items}, utils::write_tiles};
 
 pub struct TileCommand;
 
@@ -14,7 +14,7 @@ impl RoomCommand for TileCommand {
         let y = context.pop_arg().ok_or("Y position is missing.")?.parse::<usize>().map_err(|_| "Y position is not an integer.")?;
         let tiles = context.pop_arg().ok_or("Tile is missing.")?;
         let tiles = parse_string_to_items(&tiles)?;
-        let tiles = tiles.into_iter().map(|item| LOTile::from(&item)).collect::<Vec<_>>();
+        let tiles = items_to_tiles(tiles, &context.sign_text);
 
         for stem in &mut context.env.world.stems {
             match &mut stem.content {

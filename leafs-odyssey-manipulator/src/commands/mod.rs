@@ -30,4 +30,5 @@ room_commands! {
     layer_size::LayerSizeCommand,
     layer_copy::LayerCopyCommand,
     layer_move::LayerMoveCommand,
+    sign::SignCommand,
 }
