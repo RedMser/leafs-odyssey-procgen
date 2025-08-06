@@ -61,9 +61,22 @@ impl From<&Item> for LOTile {
                 }
             },
             Item::Stack(stack) => {
-                LOTile::Stack {
-                    tiles: stack.iter().map(|i| LOTile::from(i).into()).collect()
+                let tiles = stack.iter().map(|i| LOTile::from(i)).collect::<Vec<_>>();
+
+                let mut stack_connections = vec![];
+                for tile in &tiles {
+                    match tile {
+                        LOTile::ToggleSwitch { connections } |
+                        LOTile::SacrificeAltar { connections } |
+                        LOTile::PressurePlate { connections } => {
+                            stack_connections.append(&mut connections.clone());
+                        }
+                        _ => {},
+                    }
                 }
+
+                let tiles = tiles.into_iter().map(|t| t.into()).collect();
+                LOTile::Stack { tiles, connections: stack_connections }
             },
         }
     }

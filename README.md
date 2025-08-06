@@ -57,7 +57,7 @@ A simple example to start with is `Sand+(PushBlock+TerraKey*2)` which places a s
 
 Basically, you use the name of a tile as defined in `LOTile` enum in `data.rs`.
 A plus `+` means you go up a layer.
-Parentheses `( )` define a stack (max height is 16).
+Parentheses `( )` define a stack.
 Multiplication like `T*n` can be used to substitute `T+T+T+...` n-times.
 
 Complex tiles can be parametrized with colon, such as:
@@ -70,6 +70,16 @@ When writing tiles, there are two modes:
 
 - If you specify exactly as many elements as there are layers (5 by default), or if you specify 5 or more elements, then the entire coordinate is replaced. Order is from bottom to top layer. Check `Tilemap::LAYER_*` constants for default layer info. Also stacks count as a single layer (since they're internally a single tile with additional info). Use `None` as filler.
 - If you specify any less than that, then a "smart merge" is done instead, which tries to keep existing contents and use appropriate layers automatically (e.g. if you specify `Sand`, it won't touch any objects but only replace the floor type).
+
+#### Stack quirks
+
+For most of the limits here, the workaround is to use layers instead of stacks.
+
+- Only the tiles available in the editor can be used in stacks. The only exception is `None`, however it doesn't seem to do anything useful.
+- A stack can only be 16 tall at maximum.
+- All wiring elements in a stack must share the same set of connections.
+  - The manipulator will add up all connections from every wiring element of a stack, and combine them into one list.
+  - If you have overlapping stacks on different layers, then only the first stack's connections are used.
 
 ### Condition syntax
 

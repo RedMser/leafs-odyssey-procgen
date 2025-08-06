@@ -328,7 +328,7 @@ pub enum LODirection {
 
 impl Default for LODirection {
     fn default() -> Self {
-        LODirection::Down
+        LODirection::Up
     }
 }
 
@@ -558,8 +558,10 @@ pub enum LOTile {
         tiles_count: u32,
         #[br(count = tiles_count)]
         tiles: Vec<LOStackElement>,
-        #[bw(calc = 0)]
-        _unknown1: u32,
+        #[bw(calc = connections.len() as u32)]
+        connections_count: u32,
+        #[br(count = connections_count)]
+        connections: Vec<LOConnection>,
     },
     #[brw(magic = 0x30u32)]
     ToggleSwitch {
@@ -778,7 +780,7 @@ impl PartialEq for LOTile {
             (Self::SacrificeAltar { connections: l_connections }, Self::SacrificeAltar { connections: r_connections }) => l_connections == r_connections,
             (Self::StartPoint { direction: l_direction }, Self::StartPoint { direction: r_direction }) => l_direction == r_direction,
             (Self::Sign { text: l_text }, Self::Sign { text: r_text }) => l_text == r_text,
-            (Self::Stack { tiles: l_tiles }, Self::Stack { tiles: r_tiles }) => l_tiles == r_tiles,
+            (Self::Stack { tiles: l_tiles, connections: l_connections }, Self::Stack { tiles: r_tiles, connections: r_connections }) => l_tiles == r_tiles && l_connections == r_connections,
             (Self::ToggleSwitch { connections: l_connections }, Self::ToggleSwitch { connections: r_connections }) => l_connections == r_connections,
             (Self::BombBug { direction: l_direction }, Self::BombBug { direction: r_direction }) => l_direction == r_direction,
             (Self::Slug { direction: l_direction }, Self::Slug { direction: r_direction }) => l_direction == r_direction,
@@ -803,17 +805,11 @@ pub struct LOConnection {
 pub struct LOStackElement {
     pub tile: LOStackTile,
     pub direction: LOStackDirection,
-    #[brw(if(matches!(tile, LOStackTile::ToggleSwitch)))]
-    #[bw(calc = connections.len() as u32)]
-    connections_count: u32,
-    #[brw(if(matches!(tile, LOStackTile::ToggleSwitch)))]
-    #[br(count = connections_count)]
-    pub connections: Vec<LOConnection>,
 }
 
 impl PartialEq for LOStackElement {
     fn eq(&self, other: &Self) -> bool {
-        self.tile == other.tile && self.direction == other.direction && self.connections == other.connections
+        self.tile == other.tile && self.direction == other.direction
     }
 }
 impl Eq for LOStackElement {}
@@ -827,14 +823,6 @@ impl From<LOTile> for LOStackElement {
             LOTile::Slug { direction } => {
                 LOStackDirection::from(direction.clone())
             },
-            _ => Default::default(),
-        };
-        let connections = match &tile {
-            LOTile::ToggleSwitch { connections } |
-            LOTile::SacrificeAltar { connections } |
-            LOTile::PressurePlate { connections } => {
-                connections.clone()
-            }
             _ => Default::default(),
         };
         let tile = match &tile {
@@ -855,7 +843,7 @@ impl From<LOTile> for LOStackElement {
             LOTile::FlyingSnake { .. } => LOStackTile::FlyingSnake,
             _ => LOStackTile::None,
         };
-        LOStackElement { tile, direction, connections }
+        LOStackElement { tile, direction }
     }
 }
 
@@ -871,7 +859,7 @@ pub enum LOStackDirection {
 
 impl Default for LOStackDirection {
     fn default() -> Self {
-        LOStackDirection::Down
+        LOStackDirection::Up
     }
 }
 
