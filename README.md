@@ -39,7 +39,7 @@ Following commands are supported:
 - `movelayer I J` - moves the tilemap layer from I to J (both are 0-based indices).
 - `sign I C` - assign a unique identifier I with the corresponding string contents C. When placing a sign, refer to this ID to write the given contents to the sign. Stored per room, and must be assigned *before* creating the sign. Use quotes around text contents to allow whitespace.
 - `rename N` - rename the room to N. Without this command, the room's name (anything before `--`) is used, but the editor imposes a 64 characters limit. You can use this command inside of a script to circumvent the length limit.
-- `script S` - runs commands from the given script file S. It's a path relative to the current working directory. If no file extension is specified, it defaults to `.cfg`. You can use new lines synonymously to spaces in script files! Use `/* */` to create comments.
+- `script S` - runs commands from the given script file S. It's a path, by default it's relative to the current working directory (can be tweaked with `--script-dir` launch parameter). If no file extension is specified, it defaults to `.cfg`. You can use new lines synonymously to spaces in script files! Use `/* */` to create comments.
 
 Arguments of commands may only include spaces if you surround them with "quotes". You can escape literal quotes using a backslash.
 Commands are executed in reading order, so the first command runs first.

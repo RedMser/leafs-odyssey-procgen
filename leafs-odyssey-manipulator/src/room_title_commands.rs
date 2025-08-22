@@ -10,6 +10,7 @@ pub trait RoomCommand {
 pub struct WorldCommandContext<'w> {
     pub world: &'w mut LOWorld,
     pub script_cache: &'w mut HashMap<PathBuf, String>,
+    pub script_dir: &'w str,
     pub verbose: bool,
 }
 
@@ -159,7 +160,7 @@ pub fn parse_args_only(room_args: &str) -> Vec<String> {
     tokens
 }
 
-pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool, verbose: bool, mut autoscript_cache: HashMap::<RoomCoordinates, String>) -> WorldCommandsResult
+pub fn apply_world_commands<C>(world: &mut LOWorld, registered_commands: C, increment_room_revision: bool, verbose: bool, script_dir: &str, mut autoscript_cache: HashMap::<RoomCoordinates, String>) -> WorldCommandsResult
 where
     C: IntoIterator<Item = Rc<dyn RoomCommand>>,
 {
@@ -228,6 +229,7 @@ where
         let mut env = WorldCommandContext {
             world,
             script_cache: &mut script_cache,
+            script_dir,
             verbose,
         };
         let mut ctx = RoomCommandContext::new(args, &mut env, id);

@@ -55,6 +55,9 @@ struct Args {
     /// Keep running in background, automatically re-running the program periodically.
     #[arg(short = 'D', long, action)]
     pub daemon: bool,
+    /// Read script files from this directory (defaults to the working directory).
+    #[arg(short, long)]
+    pub script_dir: Option<String>,
 }
 
 fn world_name_to_path(name: &str) -> Result<PathBuf, Box<dyn Error>> {
@@ -162,9 +165,9 @@ fn dump_world(world: &LOWorld, dump_room_id: Option<u32>) {
     }
 }
 
-fn populate_autoscript_cache(world_name: &str, autoscript_cache: &mut HashMap<RoomCoordinates, String>) {
+fn populate_autoscript_cache(world_name: &str, script_dir: &str, autoscript_cache: &mut HashMap<RoomCoordinates, String>) {
     let regex = Regex::new(&format!(r"^{}_(-?\d+)_(-?\d+)_(-?\d+).cfg$", regex::escape(world_name))).unwrap();
-    for entry in fs::read_dir("./").unwrap() {
+    for entry in fs::read_dir(script_dir).unwrap() {
         if let Ok(entry) = entry {
             if let Ok(file_type) = entry.file_type() {
                 if !file_type.is_file() { continue; }
@@ -221,10 +224,11 @@ fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
+    let script_dir = args.script_dir.unwrap_or("./".to_string());
     let mut autoscript_cache = HashMap::<RoomCoordinates, String>::new();
     if args.auto_script {
         let input_name = Path::new(&input_path).file_stem().unwrap().to_string_lossy();
-        populate_autoscript_cache(&input_name, &mut autoscript_cache);
+        populate_autoscript_cache(&input_name, &script_dir, &mut autoscript_cache);
         if args.verbose {
             println!("Found {} autoscript file(s).", &autoscript_cache.len());
         }
@@ -239,7 +243,7 @@ fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
     }
 
     println!("Applying modifications...");
-    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision, args.verbose, autoscript_cache);
+    let results = apply_world_commands(&mut world, commands::get_commands(), !args.keep_room_revision, args.verbose, &script_dir, autoscript_cache);
 
     for error in results.errors {
         println!("ERROR: {}", error);

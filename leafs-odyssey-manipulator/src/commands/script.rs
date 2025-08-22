@@ -19,8 +19,8 @@ impl RoomCommand for ScriptCommand {
     }
 
     fn execute(&self, context: &mut RoomCommandContext) -> Result<(), String> {
-        let file_path = context.pop_arg().ok_or("Script file path is missing.")?;
-        let mut file_path = PathBuf::from(file_path);
+        let script_file_path = context.pop_arg().ok_or("Script file path is missing.")?;
+        let mut file_path = PathBuf::from(context.env.script_dir).join(script_file_path);
         if file_path.extension().is_none() {
             file_path.set_extension("cfg");
         }
