@@ -11,7 +11,13 @@ impl RoomCommand for TileCommand {
 
     fn execute(&self, context: &mut RoomCommandContext) -> Result<(), String> {
         let x = context.pop_arg().ok_or("X position is missing.")?.parse::<usize>().map_err(|_| "X position is not an integer.")?;
+        if x <= 0 {
+            return Err("X position must be > 0".to_owned());
+        }
         let y = context.pop_arg().ok_or("Y position is missing.")?.parse::<usize>().map_err(|_| "Y position is not an integer.")?;
+        if y <= 0 {
+            return Err("Y position must be > 0".to_owned());
+        }
         let tiles = context.pop_arg().ok_or("Tile is missing.")?;
         let tiles = parse_string_to_items(&tiles)?;
         let tiles = items_to_tiles(tiles, &context.sign_text);
