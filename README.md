@@ -44,6 +44,17 @@ Following commands are supported:
 Arguments of commands may only include spaces if you surround them with "quotes". You can escape literal quotes using a backslash.
 Commands are executed in reading order, so the first command runs first.
 
+### Testing your changes
+
+If you're in the Select World screen of Leaf's Odyssey, press F5 to reload all worlds.
+This does **not** find new world files, it only loads the ones that are in this list again.
+
+Furthermore, if you have played a world, then F5 to reload it, you might not see some of the changes you've made (e.g. if it's the starting room you've modified).
+To be sure, after F5 you should also Reset Progress in the world options.
+
+Finally, do NOT open your manipulated world in the level editor.
+It does some sanitization of various data, meaning you're likely to lose some of the changes you've made, just by opening the world.
+
 ### Tile syntax
 
 For tile-related commands (argument "T"), syntax is as follows.
