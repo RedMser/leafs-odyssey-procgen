@@ -178,7 +178,7 @@ where
             match &stem.content {
                 LOStemContent::TileZoneMap { room_info, .. } => {
                     for room in room_info {
-                        let coords = RoomCoordinates(room.x_position, room.y_position, room.z_position);
+                        let coords = RoomCoordinates(room.x_position / 24, room.y_position / 16, room.z_position);
                         if let Some(autoscript) = autoscript_cache.remove(&coords) {
                             if verbose {
                                 println!("Room ID {} at coords {:?} loaded autoscript {}", &room.id, &coords, &autoscript);
