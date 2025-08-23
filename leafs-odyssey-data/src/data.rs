@@ -615,6 +615,8 @@ impl LOTile {
                 | Self::Sky
                 | Self::Cloud
                 | Self::Pit
+                // HACK: Instead of having "None" tiles error on write, just replace floor-level...
+                | Self::None
         )
     }
 
