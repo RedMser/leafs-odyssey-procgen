@@ -55,6 +55,14 @@ To be sure, after F5 you should also Reset Progress in the world options.
 Finally, do NOT open your manipulated world in the level editor.
 It does some sanitization of various data, meaning you're likely to lose some of the changes you've made, just by opening the world.
 
+### Sharing your world
+
+Do NOT use the "Export" option to retrieve the .world file.
+Do NOT use the "Import World" option to load a manipulated .world file either.
+
+Similar to the level editor, both of these in-game options modify the world file in a way that breaks modifications done by this tool!
+You must instead locate the worlds folder manually, and manually place or copy the world file from this location.
+
 ### Tile syntax
 
 For tile-related commands (argument "T"), syntax is as follows.
