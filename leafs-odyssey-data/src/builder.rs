@@ -113,15 +113,15 @@ pub struct Tilemap {
 }
 
 impl Tilemap {
-    /// Floors and Walls.
+    /// Floors and Walls. Alex might have called this the "Floor" layer.
     pub const LAYER_FLOORS_WALLS: usize = 0;
-    /// Obstacles, Trapdoors, Ladders, Waypoints, Goal Star, Pressure Plates, Sacrifice Altars and Toggle Floors.
+    /// Obstacles, Trapdoors, Ladders, Waypoints, Goal Star, Pressure Plates, Sacrifice Altars and Toggle Floors. Alex might have called this the "Carpet" layer.
     pub const LAYER_OBSTACLES: usize = 1;
-    /// Crumbly Walls, Toggle Doors and Monster Gates.
+    /// Crumbly Walls, Toggle Doors and Monster Gates. Alex might have called this the "Object" layer.
     pub const LAYER_DOORS: usize = 2;
-    /// Keys, Push Blocks, Start Point.
+    /// Keys, Push Blocks, Start Point. Alex might have called this the "Item" layer.
     pub const LAYER_OBJECTS: usize = 3;
-    /// Monsters, Key Doors, Statue Rubble, Poison Trail, Sign, Stacks and Toggle Switches.
+    /// Monsters, Key Doors, Statue Rubble, Poison Trail, Sign, Stacks and Toggle Switches. Alex might have called this the "Entity" layer.
     pub const LAYER_ITEMS_MONSTERS: usize = 4;
 
     pub const LAYER_INDICES: std::ops::RangeInclusive<usize> = (Self::LAYER_FLOORS_WALLS..=Self::LAYER_ITEMS_MONSTERS);
