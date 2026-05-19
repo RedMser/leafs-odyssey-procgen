@@ -46,9 +46,9 @@ struct Args {
     /// Verbose output (e.g. details on command parsing).
     #[arg(short, long, action)]
     pub verbose: bool,
-    /// Dumps the room's layer data with the given ID.
+    /// Dumps the room's layer data with the given ID. Supports "*" for dumping every room, and comma-separated values for multiple IDs.
     #[arg(long, action)]
-    pub dump_room: Option<u32>,
+    pub dump_room: Option<String>,
     /// Files in the working directory named e.g. myworld_1_2_3.cfg (uses input filename) will automatically be loaded for the room at coordinate (1,2,3) at the end.
     #[arg(short, long, action)]
     pub auto_script: bool,
@@ -73,21 +73,24 @@ fn world_name_to_path(name: &str) -> Result<PathBuf, Box<dyn Error>> {
     })
 }
 
-fn dump_world(world: &LOWorld, dump_room_id: Option<u32>) {
+fn dump_world<F>(world: &LOWorld, should_dump_room: &F)
+    where F: Fn(u32) -> bool
+{
     let mut room_id_to_geometry = HashMap::new();
 
     // Pass 1: Search for world info + store room coords map
     for stem in &world.stems {
         match &stem.content {
-            LOStemContent::TileZoneMap { name, world_revision, guid_world, author, description, guid_author1, guid_author2, start_room, room_info, .. } => {
+            LOStemContent::TileZoneMap { name, world_revision, guid_world, author, description, guid_author1, guid_author2, start_room, room_info, compatibility } => {
                 println!("=== World Info ===");
                 println!("  Title: {}", name);
                 println!("  Description: {}", description);
                 println!("  Author: {} ({}-{})", author, to_guid_string(*guid_author1), to_guid_string(*guid_author2));
-                println!("  World GUID: {}", guid_world);
+                println!("  World GUID: {}", to_guid_string(*guid_world));
                 println!("  World Revision: {}", world_revision);
                 println!("  Starting Room ID: {}", start_room);
                 println!("  Room Count: {}", room_info.len());
+                println!("  Compatibility Flags: {}", compatibility);
                 println!("");
 
                 for room in room_info {
@@ -110,7 +113,7 @@ fn dump_world(world: &LOWorld, dump_room_id: Option<u32>) {
     // Pass 2: rooms
     for stem in &world.stems {
         match &stem.content {
-            LOStemContent::TileMapEdit { id, name, width, height, layers, music, revision, .. } => {
+            LOStemContent::TileMapEdit { id, name, width, height, layers, music, revision } => {
                 let room_geo = room_id_to_geometry.get(id);
                 if let Some((x, y, z, geo_width, geo_height)) = room_geo {
                     // TODO: special handling if grid coordinate is not a multiple of 24x16:
@@ -142,20 +145,18 @@ fn dump_world(world: &LOWorld, dump_room_id: Option<u32>) {
                 }
                 println!("");
 
-                if let Some(dump_room_id) = dump_room_id {
-                    if *id == dump_room_id {
-                        for (i, layer) in layers.iter().enumerate() {
-                            println!("  Contents of Layer {i}:");
-                            
-                            for y in 0..layer.height {
-                                let mut row = vec![];
-                                for x in 0..layer.width {
-                                    let j = x + y * layer.width;
-                                    let tile = &layer.tiles[j as usize];
-                                    row.push(format!("{:?}", &tile));
-                                }
-                                println!("{}", row.join(" "));
+                if should_dump_room(*id) {
+                    for (i, layer) in layers.iter().enumerate() {
+                        println!("  Contents of Layer {i}:");
+                        
+                        for y in 0..layer.height {
+                            let mut row = vec![];
+                            for x in 0..layer.width {
+                                let j = x + y * layer.width;
+                                let tile = &layer.tiles[j as usize];
+                                row.push(format!("{:?}", &tile));
                             }
+                            println!("{}", row.join(" "));
                         }
                     }
                 }
@@ -184,6 +185,25 @@ fn populate_autoscript_cache(world_name: &str, script_dir: &str, autoscript_cach
                 }
             }
         }
+    }
+}
+
+fn parse_dump_room_fn(dump_room: Option<String>) -> Box<dyn Fn(u32) -> bool> {
+    match dump_room {
+        Some(dump_room) => {
+            if dump_room.contains('*') {
+                Box::new(|_| true)
+            } else {
+                let values: Vec<u32> = dump_room
+                    .split(',')
+                    .filter_map(|s| s.trim().parse::<u32>().ok())
+                    .collect();
+
+                Box::new(move |x| values.contains(&x))
+            }
+        }
+
+        None => Box::new(|_| false),
     }
 }
 
@@ -234,12 +254,14 @@ fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
         }
     }
 
+    let dump_room_fn = parse_dump_room_fn(args.dump_room);
+
     println!("Reading world \"{:?}\"...", input_path);
     let mut fa = std::fs::File::open(input_path)?;
     let mut world = LOWorld::read(&mut fa)?;
 
     if args.dump && !args.dump_after {
-        dump_world(&world, args.dump_room);
+        dump_world(&world, &dump_room_fn);
     }
 
     println!("Applying modifications...");
@@ -249,7 +271,7 @@ fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
         println!("ERROR: {}", error);
     }
 
-    if !results.modified {
+    if !results.modified && !args.dump && !args.dump_after {
         println!("No room with commands was found! Check README for more info.");
     }
 
@@ -272,7 +294,7 @@ fn do_work(args: Args) -> Result<(), Box<dyn Error>> {
     }
 
     if args.dump_after {
-        dump_world(&world, args.dump_room);
+        dump_world(&world, &dump_room_fn);
     }
 
     if !args.dryrun {
