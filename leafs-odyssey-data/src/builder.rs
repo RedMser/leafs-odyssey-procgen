@@ -263,7 +263,9 @@ impl Tilemap {
         self.write_on_layer(Self::LAYER_OBSTACLES, tile, selection);
     }
     pub fn write_puzzle_element(&mut self, tile: &LOTile, selection: &TileSelection) {
-        let layer = if tile.is_puzzle_layer3() {
+        let layer = if tile.is_puzzle_floor() {
+            Self::LAYER_FLOORS_WALLS
+        } else if tile.is_puzzle_layer3() {
             Self::LAYER_DOORS
         } else if tile.is_puzzle_layer4() {
             Self::LAYER_OBJECTS
